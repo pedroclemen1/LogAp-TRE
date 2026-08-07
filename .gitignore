@@ -1,0 +1,36 @@
+# ---- Node / Next (web) ----
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# ---- Java / Maven (api) ----
+target/
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/timing.properties
+
+# ---- Segredos ----
+# A chave da API do Stitch vive aqui; nunca versionar.
+.claude/settings.local.json
+.env
+.env.local
+*.local
+
+# ---- Editor / SO ----
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.swp
+
+# ---- Logs ----
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ---- Lockfile duplicado ----
+# O projeto usa npm; um yarn.lock aparece quando se roda `yarn` por engano.
+yarn.lock
