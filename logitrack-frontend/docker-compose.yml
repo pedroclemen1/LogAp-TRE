@@ -1,0 +1,19 @@
+services:
+  web:
+    build:
+      context: .
+    image: logitrack-frontend:latest
+    environment:
+      API_BASE_URL: ${DOCKER_API_BASE_URL:-http://host.docker.internal:8080}
+      API_REQUEST_TIMEOUT_MS: ${API_REQUEST_TIMEOUT_MS:-15000}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/login >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s

@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+README.md
+docs
+*.tsbuildinfo
+.env*
+Dockerfile
+.dockerignore
+docker-compose.yml
+.oxlintrc.json
+**/*.test.ts
+**/*.test.tsx
+**/*.test.mjs
