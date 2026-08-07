@@ -1,0 +1,218 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/forms";
+
+/* O tema é controlado pela classe do elemento <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-primary: #171f5e;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #2e3675;
+  --color-on-primary-container: #9aa1e8;
+  --color-inverse-primary: #bcc2ff;
+  --color-primary-fixed: #dfe0ff;
+  --color-primary-fixed-dim: #bcc2ff;
+  --color-on-primary-fixed: #091254;
+  --color-on-primary-fixed-variant: #394181;
+
+  --color-secondary: #515f74;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #d5e3fc;
+  --color-on-secondary-container: #57657a;
+  --color-secondary-fixed: #d5e3fc;
+  --color-secondary-fixed-dim: #b9c7df;
+  --color-on-secondary-fixed: #0d1c2e;
+  --color-on-secondary-fixed-variant: #3a485b;
+
+  --color-tertiary: #3d1f00;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #5c3200;
+  --color-on-tertiary-container: #d79a60;
+  --color-tertiary-fixed: #ffdcc0;
+  --color-tertiary-fixed-dim: #fbb97c;
+  --color-on-tertiary-fixed: #2d1600;
+  --color-on-tertiary-fixed-variant: #693c09;
+
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  --color-background: #fbf8fe;
+  --color-on-background: #1b1b20;
+  --color-surface: #fbf8fe;
+  --color-surface-dim: #dcd9df;
+  --color-surface-bright: #fbf8fe;
+  --color-surface-variant: #e4e1e8;
+  --color-surface-tint: #51599a;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f5f2f9;
+  --color-surface-container: #f0edf3;
+  --color-surface-container-high: #eae7ed;
+  --color-surface-container-highest: #e4e1e8;
+  --color-on-surface: #1b1b20;
+  --color-on-surface-variant: #464650;
+  --color-inverse-surface: #303035;
+  --color-inverse-on-surface: #f2eff6;
+
+  --color-outline: #767681;
+  --color-outline-variant: #c7c5d1;
+  --color-user-avatar: #137333;
+  --color-user-avatar-hover: #0f5c29;
+  --color-on-user-avatar: #ffffff;
+
+  --color-table-header: #f1f5f9;
+
+  --color-sidebar: #303035;
+  --color-sidebar-hover: #474753;
+  --color-sidebar-active: #2e3675;
+  --color-sidebar-accent: #bcc2ff;
+  --color-on-sidebar: #f7f5fc;
+  --color-on-sidebar-variant: #c7c5d1;
+
+  --font-display-lg: "Hanken Grotesk", sans-serif;
+  --font-headline-md: "Hanken Grotesk", sans-serif;
+  --font-headline-sm: "Hanken Grotesk", sans-serif;
+  --font-body-lg: "Inter", sans-serif;
+  --font-body-md: "Inter", sans-serif;
+  --font-body-sm: "Inter", sans-serif;
+  --font-label-caps: "Inter", sans-serif;
+  --font-data-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --text-display-lg: 32px;
+  --text-display-lg--line-height: 40px;
+  --text-display-lg--letter-spacing: -0.02em;
+  --text-display-lg--font-weight: 700;
+
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 32px;
+  --text-headline-md--font-weight: 600;
+
+  --text-headline-sm: 18px;
+  --text-headline-sm--line-height: 24px;
+  --text-headline-sm--font-weight: 600;
+
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 24px;
+  --text-body-lg--font-weight: 400;
+
+  --text-body-md: 14px;
+  --text-body-md--line-height: 20px;
+  --text-body-md--font-weight: 400;
+
+  --text-body-sm: 12px;
+  --text-body-sm--line-height: 16px;
+  --text-body-sm--font-weight: 400;
+
+  --text-label-caps: 11px;
+  --text-label-caps--line-height: 12px;
+  --text-label-caps--letter-spacing: 0.06em;
+  --text-label-caps--font-weight: 700;
+
+  --text-data-mono: 13px;
+  --text-data-mono--line-height: 16px;
+  --text-data-mono--letter-spacing: -0.01em;
+  --text-data-mono--font-weight: 500;
+
+  --spacing-unit: 4px;
+  --spacing-gutter: 16px;
+  --spacing-container-padding: 24px;
+  --spacing-sidebar-width: 260px;
+  --spacing-shell-header-height: 96px;
+  --spacing-compact-row-height: 40px;
+  --spacing-standard-row-height: 56px;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --color-primary: #aeb6ff;
+  --color-on-primary: #141b4e;
+  --color-primary-container: #323d82;
+  --color-on-primary-container: #e0e2ff;
+  --color-inverse-primary: #51599a;
+
+  --color-secondary: #b8c8e2;
+  --color-on-secondary: #223247;
+  --color-secondary-container: #2b3a50;
+  --color-on-secondary-container: #d7e5fb;
+
+  --color-tertiary: #f6bb7f;
+  --color-on-tertiary: #452a0c;
+  --color-tertiary-container: #66441f;
+  --color-on-tertiary-container: #ffddb8;
+
+  --color-error: #ffb4ab;
+  --color-on-error: #690005;
+  --color-error-container: #681c1d;
+  --color-on-error-container: #ffdad6;
+
+  --color-background: #080c14;
+  --color-on-background: #e8edf7;
+  --color-surface: #0d1420;
+  --color-surface-dim: #080c14;
+  --color-surface-bright: #263248;
+  --color-surface-variant: #273349;
+  --color-surface-tint: #aeb6ff;
+  --color-surface-container-lowest: #101927;
+  --color-surface-container-low: #121c2c;
+  --color-surface-container: #172235;
+  --color-surface-container-high: #1d2a40;
+  --color-surface-container-highest: #26344d;
+  --color-on-surface: #edf2fb;
+  --color-on-surface-variant: #b4bfd1;
+  --color-inverse-surface: #e5eaf3;
+  --color-inverse-on-surface: #1c2430;
+
+  --color-outline: #8997ad;
+  --color-outline-variant: #34435b;
+  --color-table-header: #152238;
+
+  --color-sidebar: #050914;
+  --color-sidebar-hover: #17243a;
+  --color-sidebar-active: #2f3b83;
+  --color-sidebar-accent: #aeb6ff;
+  --color-on-sidebar: #f0f3ff;
+  --color-on-sidebar-variant: #aeb9cd;
+}
+
+@utility grid-pattern {
+  background-size: 40px 40px;
+  background-image:
+    linear-gradient(to right, rgb(118 118 129 / 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(118 118 129 / 0.1) 1px, transparent 1px);
+
+  .dark & {
+    background-image:
+      linear-gradient(to right, rgb(174 182 255 / 0.075) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(174 182 255 / 0.075) 1px, transparent 1px);
+  }
+}
+
+.login-ambient {
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.dark .login-ambient {
+  opacity: 1;
+  background:
+    radial-gradient(circle at 50% 38%, rgb(77 91 180 / 0.25), transparent 34%),
+    radial-gradient(circle at 50% 70%, rgb(35 70 120 / 0.14), transparent 42%);
+}
+
+.material-symbols-outlined.filled {
+  font-variation-settings: 'FILL' 1;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-body-md);
+  background-color: var(--color-background);
+  color: var(--color-on-background);
+}
