@@ -1,6 +1,15 @@
-# Autenticação e autorização
+# Decisões técnicas
 
-## Contas e primeiro acesso
+Decisões de implementação da API que não são evidentes no código: o modelo de
+contas e permissões, o contrato estável de erros e a auditoria de consultas.
+
+As decisões de schema, migrations e índices ficam em
+[`decisoes-de-banco.md`](decisoes-de-banco.md). A divisão de módulos fica em
+[`arquitetura.md`](arquitetura.md).
+
+## Autenticação e autorização
+
+### Contas e primeiro acesso
 
 Produção não carrega `db/seed` e não oferece cadastro público. A primeira conta
 é criada pelo bootstrap a partir dos secrets do ambiente; as demais entram por
@@ -25,7 +34,7 @@ Cada usuário possui uma versão de credenciais incluída no JWT. A troca de sen
 incrementa essa versão e devolve um token novo; qualquer token anterior deixa
 de autenticar imediatamente, inclusive um token obtido com a senha temporária.
 
-## Convites
+### Convites
 
 `POST /api/auth/invitations` exige `GESTOR` e devolve um link para entrega
 manual. O token possui 256 bits gerados por `SecureRandom`; o banco armazena
@@ -49,7 +58,7 @@ Convites usados, revogados e expirados são preservados no piloto para auditoria
 Antes de operação prolongada, deve ser definida uma retenção e uma limpeza
 agendada que nunca remova convites ainda utilizáveis.
 
-## Matriz de permissões
+### Matriz de permissões
 
 | Operação | OPERADOR | GESTOR |
 | --- | ---: | ---: |
@@ -66,7 +75,7 @@ aceito como fonte definitiva: a cada requisição o filtro carrega o usuário
 ativo no banco. Desativação e alteração de perfil passam a valer sem esperar o
 JWT expirar.
 
-## Tokens e respostas de erro
+### Tokens e respostas de erro
 
 JWT é stateless, assinado com HS256 e enviado no header `Authorization`. O
 segredo é obrigatório em produção e sua rotação encerra todas as sessões. A
@@ -95,9 +104,41 @@ Códigos relevantes:
 | `INVALID_PARAMETER` | 400 | parâmetro incompatível com o contrato |
 | `DATA_CONFLICT` | 409 | conflito com restrição persistida |
 
-O limitador atual guarda contadores apenas na instância da API e atende ao
-piloto de instância única. Suas limitações e a migração necessária para Redis e
-proteção de edge antes de escalar estão em `deploy-render.md`.
+### Limitação de tentativas de login
+
+Cinco credenciais inválidas em quinze minutos bloqueiam novas tentativas para a
+mesma combinação de identidade e endereço remoto até o fim da janela. A resposta
+é HTTP `429` com `Retry-After`. Um login válido limpa imediatamente as falhas
+daquela combinação.
+
+O mapa guarda somente uma chave HMAC de e-mail normalizado mais endereço
+remoto, com segredo aleatório que existe apenas durante a vida do processo:
+e-mails e endereços em texto puro não ficam no limitador nem nos logs. Ao
+atingir o teto de identidades, a janela ainda não bloqueada com expiração mais
+próxima é despejada antes da inclusão — bloqueios ativos são preservados, de
+modo que o teto de memória não cria bloqueio global nem permite que um churn
+barato apague uma proteção ativa.
+
+A chave composta evita que um atacante em uma origem bloqueie o acesso legítimo
+da mesma conta a partir de outra. Em contrapartida, uma botnet que troque de
+endereço obtém uma janela nova.
+
+Duas limitações deliberadas do piloto:
+
+1. **Os contadores vivem na memória de cada instância.** São perdidos em
+   reinicialização e não são compartilhados entre réplicas. Antes de escalar
+   horizontalmente, o armazenamento precisa migrar para Redis ou outro
+   mecanismo distribuído com incremento atômico e expiração. Aumentar o número
+   de instâncias mantendo o limitador local faria cada réplica aplicar uma
+   janela independente.
+2. **`forward-headers-strategy=framework` confia no proxy.** É o que faz
+   `getRemoteAddr()` refletir o cliente encaminhado. Isso pressupõe um proxy
+   confiável que remova ou sobrescreva `Forwarded` e `X-Forwarded-*` enviados
+   pelo cliente. Exposta diretamente à internet, a aplicação permitiria trocar
+   a chave do limitador.
+
+Antes de abrir cadastro público ou receber tráfego relevante, acrescente limites
+por origem, proteção no edge/WAF e monitoração de falhas.
 
 Novos fluxos que exigem decisão do cliente devem sempre receber um código
 específico. Algumas regras operacionais antigas ainda usam
@@ -105,8 +146,51 @@ específico. Algumas regras operacionais antigas ainda usam
 códigos deve ser feita junto com os catálogos PT/EN para não romper o contrato
 visual existente.
 
-## Dois healthchecks
+### Dois healthchecks
 
 `/actuator/health` permanece público, sem detalhes, porque o Render não possui
 um JWT de usuário para promover ou reiniciar uma instância. `/api/health`
 continua autenticado e valida o caminho usado pelas demais rotas da aplicação.
+
+## Auditoria de consultas N+1
+
+### Critério
+
+Uma consulta N+1 acontece quando a quantidade de SQL cresce junto com a
+quantidade de linhas retornadas, normalmente pela inicialização repetida de uma
+associação `LAZY`.
+
+A revisão combinou inspeção dos relacionamentos JPA com testes de orçamento de
+consultas usando `Hibernate Statistics`. Os testes criam cinco registros,
+consultam uma página com três itens e falham se o Hibernate fizer uma consulta
+adicional por linha.
+
+### Fluxos revisados
+
+| Fluxo | Estratégia | Limite de statements |
+|---|---|---:|
+| Lista de viagens | página com `veiculo`/`motorista` via `JOIN FETCH` + cidades em lote | 3 |
+| Candidatos a romaneio | página de viagens + trechos em lote + IDs de romaneio em lote | 4 |
+| Lista de manutenções | página de IDs + `EntityGraph` para veículo, itens e catálogo | 3 |
+| Lista simples de veículos | IDs em uso, IDs em manutenção e veículos | 3 |
+| Lista de motoristas | IDs em uso e motoristas | 2 |
+| Romaneios emitidos | página de IDs + documento/itens em lote | 3 |
+| Detalhe da viagem | viagem, trechos e eventos | 3 |
+| Dashboard | consultas agregadas fixas; não percorre entidades JPA | quantidade constante |
+
+O `count` da paginação está incluído nos limites. Em páginas finais o Spring
+pode omiti-lo, então os testes usam mais registros que o tamanho da página.
+
+### Problema corrigido
+
+A criação e a edição de uma manutenção chamavam `findById` uma vez para cada
+serviço solicitado. O catálogo agora recebe todos os IDs e executa um único
+`findAllById`, validando em memória serviços ausentes ou inativos. Inserts dos
+itens continuam naturalmente proporcionais à quantidade gravada; o problema
+eliminado foi a multiplicação de `SELECT`s.
+
+### Proteção contra regressão
+
+Os limites estão em `NPlusOneQueryIT`. Um novo campo de DTO que atravesse uma
+associação não carregada fará o número de statements ultrapassar o orçamento e
+quebrará a suíte antes de chegar à produção.

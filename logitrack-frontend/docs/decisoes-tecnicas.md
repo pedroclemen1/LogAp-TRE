@@ -6,19 +6,31 @@ O navegador não chama a API Spring diretamente. O Next recebe a requisição, l
 `HttpOnly` e envia `Authorization: Bearer` ao backend. Isso evita `localStorage`, centraliza erros e
 permite que as páginas sejam renderizadas no servidor.
 
-O proxy verifica somente a presença do cookie para decidir a navegação. A assinatura, expiração e
-situação do usuário continuam sendo validadas pelo Spring. Um `401` limpa o cookie antes de voltar
-ao login, evitando ciclos de redirecionamento.
+O proxy verifica a presença do cookie para decidir a navegação. Um segundo cookie `HttpOnly`, sem
+credencial, marca a troca obrigatória da senha inicial e limita a navegação a `/alterar-senha`.
+A assinatura, expiração, perfil e situação do usuário continuam sendo validados pelo Spring. Um
+`401` limpa a sessão antes de voltar ao login, evitando ciclos de redirecionamento.
 
 Em produção, o cookie usa `Secure`, `HttpOnly`, `SameSite=Lax` e o mesmo prazo do JWT. O logout atual
 remove o cookie, mas não revoga um token já copiado; revogação por `jti` ou sessão persistida é uma
 evolução do backend caso invalidação imediata se torne requisito.
 
+Ao trocar a senha, a API invalida a credencial anterior e devolve um novo `LoginResponse`. A Server
+Action substitui o JWT e sua expiração diretamente no cookie `HttpOnly` antes do redirecionamento e
+só então remove o marcador de troca obrigatória. O token novo nunca é serializado para um componente
+client nem fica disponível ao JavaScript do navegador.
+
 ### Inicial do avatar
 
-O avatar usa a inicial do `sub` do JWT, que atualmente contém o e-mail. O payload é lido no servidor
-somente para personalização visual e nunca participa de autorização. Toda autorização continua no
-backend, que valida a assinatura do token.
+O avatar usa a inicial do `sub` do JWT, que atualmente contém o e-mail. O payload também informa se
+o menu administrativo deve ser mostrado, mas é lido no servidor somente para apresentação e nunca
+participa da autorização efetiva. Toda autorização continua no backend, que valida a assinatura e
+o perfil atual do usuário.
+
+Essa mesma leitura orienta a experiência das páginas de frota, motoristas e catálogo de serviços.
+O Server Component converte o perfil em uma capacidade booleana: o gestor recebe os controles de
+mutação e o operador mantém busca, filtros, exportação e consulta. Os componentes não conhecem os
+nomes dos perfis, e uma requisição forjada continua sujeita ao RBAC da API Spring.
 
 ## Configuração da API
 
@@ -60,9 +72,9 @@ O cliente converte respostas da API em `ApiRequestError`, `UnauthorizedError` ou
 Páginas usam um error boundary comum. Alertas de manutenção são complementares e usam fallback:
 uma falha nessa consulta não deve impedir o restante da aplicação de abrir.
 
-O backend ainda devolve mensagens de negócio em português. O frontend possui um mapeamento para
-chaves i18n, mas isso mantém acoplamento textual. A evolução correta é acrescentar um campo `code`
-estável ao `ApiError` e manter a mensagem apenas como fallback durante a migração.
+O frontend prioriza o campo estável `code` do `ApiError` nos fluxos novos e mantém a mensagem como
+fallback durante a migração dos erros anteriores. Isso permite traduzir regras de negócio sem
+acoplamento ao texto em português devolvido pela API.
 
 ## Exportações e documentos
 
@@ -77,9 +89,13 @@ O PDF é criado no navegador a partir da folha visível. `html2canvas-pro` é ne
 as funções de cor geradas pelo Tailwind 4; `jspdf` monta o arquivo. Ambos são importados somente no
 clique de download para não aumentar o carregamento inicial.
 
-## Cadastro por convite planejado
+## Cadastro por convite
 
-O cadastro público permanece fechado. A evolução planejada é um link de convite individual, de uso
-único e com expiração. O backend deverá armazenar somente o hash do token e fixar o perfil no
-convite; o formulário não poderá escolher privilégios. Esta funcionalidade ainda não está
-implementada.
+O cadastro público permanece fechado. Um gestor gera um link individual em `/usuarios`; perfil e
+e-mail ficam fixados no convite, que possui expiração e uso único. O destinatário abre `/convite`,
+onde o Next valida o token no backend antes de mostrar o formulário. Somente nome e senha são
+definidos na ativação.
+
+O token de convite aparece inevitavelmente no link recebido, mas não é reutilizado como sessão e
+o backend armazena somente seu hash. A página define `Referrer-Policy: no-referrer` para não enviar
+o token a destinos externos. O JWT de sessão permanece exclusivamente no cookie `HttpOnly`.

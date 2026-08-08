@@ -11,8 +11,6 @@ target/
 .mvn/timing.properties
 
 # ---- Segredos ----
-# A chave da API do Stitch vive aqui; nunca versionar.
-.claude/settings.local.json
 .env
 .env.local
 *.local
@@ -30,6 +28,12 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# ---- Material de apoio, nao faz parte da solucao ----
+# Enunciado do desafio (documento de quem avalia) e asset de design solto.
+# Continuam no disco; so nao entram no repositorio.
+desafio-descricao.pdf
+logap_logo_refined.png
 
 # ---- Lockfile duplicado ----
 # O projeto usa npm; um yarn.lock aparece quando se roda `yarn` por engano.

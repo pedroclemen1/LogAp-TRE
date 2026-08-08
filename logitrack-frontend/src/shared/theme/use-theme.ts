@@ -6,7 +6,7 @@ const DARK_CLASS = 'dark'
 const STORAGE_KEY = 'logitrack-theme'
 
 /**
- * Unica abstracao de tema do projeto. O design do Stitch usa
+ * Unica abstracao de tema do projeto. O Tailwind esta configurado com
  * `darkMode: "class"`, entao o tema vive na classe do <html>.
  *
  * O script curto do RootLayout aplica a preferencia antes da primeira pintura.
