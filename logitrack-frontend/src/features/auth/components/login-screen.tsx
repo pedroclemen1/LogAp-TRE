@@ -25,9 +25,10 @@ type LoginScreenProps = {
   redirectTo: string
   /** Veio de `/api/auth/expirar`: distingue "sessao caiu" de "credencial errada". */
   hasExpired: boolean
+  invitationAccepted: boolean
 }
 
-export function LoginScreen({ redirectTo, hasExpired }: LoginScreenProps) {
+export function LoginScreen({ redirectTo, hasExpired, invitationAccepted }: LoginScreenProps) {
   const t = useTranslations('Auth')
   const { toggle } = useTheme()
   const { formAction, isSubmitting, errorMessage, isPasswordVisible, togglePasswordVisibility } =
@@ -118,6 +119,12 @@ export function LoginScreen({ redirectTo, hasExpired }: LoginScreenProps) {
             {hasExpired && !errorMessage && (
               <p role="status" className="rounded-xs border border-outline-variant bg-surface-container-low px-3 py-2 font-body-sm text-body-sm text-on-surface-variant dark:border-[#526483] dark:bg-[#1b2940] dark:text-[#dce4f3]">
                 {t('expired')}
+              </p>
+            )}
+
+            {invitationAccepted && !errorMessage && (
+              <p role="status" className="rounded-xs border border-user-avatar/40 bg-user-avatar/10 px-3 py-2 font-body-sm text-body-sm text-user-avatar dark:text-[#8be8a8]">
+                {t('invitationAccepted')}
               </p>
             )}
 

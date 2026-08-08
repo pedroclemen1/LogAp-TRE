@@ -30,7 +30,9 @@
     "portuguese": "Português (Brasil)",
     "english": "English (US)",
     "selected": "Selected language",
-    "changing": "Changing language..."
+    "changing": "Changing language...",
+    "manageUsers": "Invite users",
+    "changePassword": "Change password"
   },
   "Navigation": {
     "overview": "Overview",
@@ -93,6 +95,10 @@
     "manifests": {
       "title": "Manifest Management",
       "subtitle": "Issue and review the cargo manifests for your trips."
+    },
+    "users": {
+      "title": "Users and invitations",
+      "subtitle": "Generate individual access links and review invitation details."
     }
   },
   "MaintenanceAlerts": {
@@ -126,12 +132,89 @@
     "showPassword": "Show password",
     "hidePassword": "Hide password",
     "expired": "Your session has expired. Please sign in again.",
+    "invitationAccepted": "Your account was created successfully. Sign in with your email and new password.",
     "submit": "Enter system",
     "entering": "Signing in...",
     "secureConnection": "SYS.V.2.0.4 | ENCRYPTED CONNECTION",
     "errors": {
       "required": "Enter your email and password.",
       "invalidCredentials": "Invalid email or password.",
+      "network": "The server could not be reached. Please try again."
+    }
+  },
+  "PasswordChange": {
+    "logoAlt": "LogiTrack Pro logo",
+    "title": "Set a new password",
+    "description": "For your security, change the initial password before accessing the system.",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmation": "Confirm new password",
+    "passwordHelp": "Use at least 12 characters.",
+    "submit": "Save new password",
+    "saving": "Saving...",
+    "logout": "Log out and return to sign in",
+    "validation": {
+      "currentRequired": "Enter your current password.",
+      "newRequired": "Enter a new password.",
+      "confirmationRequired": "Confirm the new password.",
+      "passwordMismatch": "The passwords do not match."
+    },
+    "errors": {
+      "invalidCurrent": "The current password is incorrect.",
+      "weakPassword": "The new password must contain at least 12 characters and stay within the 72-byte limit.",
+      "passwordReuse": "The new password must be different from the current password.",
+      "network": "The server could not be reached. Please try again."
+    }
+  },
+  "Invitation": {
+    "logoAlt": "LogiTrack Pro logo",
+    "name": "Name",
+    "email": "Email",
+    "password": "Password",
+    "confirmation": "Confirm password",
+    "passwordHelp": "Use at least 12 characters.",
+    "role": "Role",
+    "expiresAt": "Expires at",
+    "roles": {
+      "OPERADOR": "Operator",
+      "GESTOR": "Manager"
+    },
+    "accept": {
+      "title": "Create your account",
+      "description": "This invitation was issued to {email}. Set your access details.",
+      "submit": "Activate account",
+      "submitting": "Activating..."
+    },
+    "invalid": {
+      "title": "This invitation is unavailable",
+      "backToLogin": "Back to sign in"
+    },
+    "management": {
+      "formTitle": "Invite a user",
+      "formDescription": "Generate an individual link and send it to the recipient through a secure channel.",
+      "generate": "Generate invitation",
+      "generating": "Generating...",
+      "resultTitle": "Activation link",
+      "resultDescription": "The link is temporary and can be used only once.",
+      "activationLink": "Link to share",
+      "copy": "Copy",
+      "copied": "Copied",
+      "empty": "The link will appear here after the invitation is generated."
+    },
+    "validation": {
+      "nameRequired": "Enter your name.",
+      "passwordRequired": "Enter a password.",
+      "passwordLength": "The password must contain at least 12 characters.",
+      "confirmationRequired": "Confirm the password.",
+      "passwordMismatch": "The passwords do not match.",
+      "emailRequired": "Enter the email address.",
+      "roleRequired": "Select a role."
+    },
+    "errors": {
+      "invalid": "The link is invalid, expired, or no longer exists.",
+      "weakPassword": "The password must contain at least 12 characters and stay within the 72-byte limit.",
+      "emailAlreadyRegistered": "An account with this email already exists.",
+      "accessDenied": "Only managers can create invitations.",
       "network": "The server could not be reached. Please try again."
     }
   },
@@ -147,7 +230,10 @@
     "newTrip": "New trip | LogiTrack Pro",
     "tripDetails": "Trip details | LogiTrack Pro",
     "maintenanceServices": "Maintenance services | LogiTrack Pro",
-    "manifests": "Manifests | LogiTrack Pro"
+    "manifests": "Manifests | LogiTrack Pro",
+    "passwordChange": "Change password | LogiTrack Pro",
+    "invitation": "Activate account | LogiTrack Pro",
+    "users": "Users | LogiTrack Pro"
   },
   "Dashboard": {
     "filters": {
@@ -278,7 +364,7 @@
       "updatedDescription": "Fleet data was saved successfully.",
       "deleteTitle": "Delete vehicle",
       "deleteDescription": "Do you want to delete only {plate} or select others?",
-      "deleteProtected": "Vehicles with trips, maintenance, or expenses are protected and cannot be deleted.",
+      "deleteProtected": "Vehicles with trips or maintenance records are protected and cannot be deleted.",
       "selectOthers": "Select others",
       "deleting": "Deleting...",
       "deleteOnly": "Delete only this",
@@ -929,8 +1015,14 @@
   },
   "ApiErrors": {
     "validationFailed": "Check the submitted fields.",
+    "malformedRequest": "The submitted request is invalid.",
+    "invalidParameter": "A request parameter is invalid.",
+    "dataConflict": "The operation conflicts with existing data.",
     "invalidCredentials": "Invalid email or password.",
+    "loginRateLimit": "Too many sign-in attempts. Wait a few minutes and try again.",
     "unauthorized": "Your session has expired. Sign in again.",
+    "accessDenied": "You do not have permission to perform this operation.",
+    "passwordChangeRequired": "Set a new password before continuing.",
     "resourceNotFound": "Resource ID {id} was not found.",
     "driverHasTrips": "Reassign, cancel, or complete unfinished trips before deactivating the driver.",
     "licenseExists": "A driver with this license already exists.",
@@ -969,7 +1061,7 @@
     "canceledTripImmutable": "A canceled trip cannot be changed.",
     "driverAlreadyInTrip": "The driver is already assigned to a trip in progress.",
     "dashboardPeriod": "The dashboard period must be 7 or 30 days.",
-    "vehicleHasHistory": "A vehicle with trips, maintenance, or expenses cannot be deleted: {plates}.",
+    "vehicleHasHistory": "A vehicle with trips or maintenance cannot be deleted: {plates}.",
     "plateExists": "A vehicle with plate {plate} already exists.",
     "activeTripsBeforeDelete": "Cancel or complete trips in progress before deleting: {ids}.",
     "stageBeforeDeparture": "The estimate for segment {number} cannot be before departure.",

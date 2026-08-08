@@ -5,12 +5,13 @@ import { getLocale, getTranslations } from 'next-intl/server'
 import { getApiBaseUrl, getApiRequestTimeoutMs } from '@/shared/config/env'
 import { SESSION_COOKIE } from '@/shared/config/session'
 import { ApiRequestError, NotFoundError, UnauthorizedError, type ApiErrorBody } from './api-error'
-import { resolveApiError } from './api-error-localization'
+import { resolveApiError, resolveApiErrorCode } from './api-error-localization'
 
 type FetchOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: unknown
   searchParams?: URLSearchParams
+  headers?: Readonly<Record<string, string>>
 }
 
 async function authorizationHeader(): Promise<Record<string, string>> {
@@ -29,7 +30,9 @@ async function toError(response: Response, path: string): Promise<ApiRequestErro
 
   const t = await getTranslations('ApiErrors')
   const locale = await getLocale()
-  const resolved = body.message ? resolveApiError(body.message) : undefined
+  const resolved = body.code
+    ? resolveApiErrorCode(body.code) ?? (body.message ? resolveApiError(body.message) : undefined)
+    : body.message ? resolveApiError(body.message) : undefined
   let message: string
   if (resolved) message = t(resolved.key, resolved.values)
   else if (!body.message) message = t('httpFailure', { path, status: response.status })
@@ -46,19 +49,20 @@ async function toError(response: Response, path: string): Promise<ApiRequestErro
       }))
     : undefined
 
-  if (response.status === 401) return new UnauthorizedError(message)
-  if (response.status === 404) return new NotFoundError(message)
-  return new ApiRequestError(response.status, message, fieldErrors)
+  if (response.status === 401) return new UnauthorizedError(message, body.code)
+  if (response.status === 404) return new NotFoundError(message, body.code)
+  return new ApiRequestError(response.status, message, fieldErrors, body.code)
 }
 
 async function request<T>(path: string, options: FetchOptions, authenticated: boolean): Promise<T> {
-  const { method = 'GET', body, searchParams } = options
+  const { method = 'GET', body, searchParams, headers } = options
   const query = searchParams?.toString()
   const url = `${getApiBaseUrl()}${path}${query ? `?${query}` : ''}`
 
   const response = await fetch(url, {
     method,
     headers: {
+      ...headers,
       Accept: 'application/json',
       ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
       ...(authenticated ? await authorizationHeader() : {}),

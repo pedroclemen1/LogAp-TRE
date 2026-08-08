@@ -11,7 +11,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string; expirada?: string }>
+  searchParams: Promise<{ from?: string; expirada?: string; convite?: string }>
 }) {
   const params = await searchParams
 
@@ -19,6 +19,7 @@ export default async function Page({
     <LoginScreen
       redirectTo={sanitizeInternalPath(params.from)}
       hasExpired={params.expirada === '1'}
+      invitationAccepted={params.convite === 'aceito'}
     />
   )
 }

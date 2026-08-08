@@ -1,16 +1,22 @@
 'use server'
 
-import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
-import { ApiRequestError } from '@/shared/api/api-error'
-import { SESSION_COOKIE } from '@/shared/config/session'
-import { login } from './api/auth-api'
+import { ApiRequestError, UnauthorizedError } from '@/shared/api/api-error'
+import { redirectToExpiredSession } from '@/shared/api/require-session'
+import { changePassword, login } from './api/auth-api'
+import { getSignedLoginClientIdentity } from './api/login-client-identity'
+import { clearAuthenticatedSession, writeAuthenticatedSession } from './api/session-cookies'
 import { sanitizeInternalPath } from './lib/internal-path'
 
 export type LoginFormState = {
   /** Mensagem de erro para exibir; ausente quando nao houve tentativa ou deu certo. */
   error?: string
+}
+
+export type PasswordChangeFormState = {
+  error?: string
+  fieldErrors?: Partial<Record<'currentPassword' | 'newPassword' | 'confirmation', string>>
 }
 
 /**
@@ -33,12 +39,9 @@ export async function signInAction(
     return { error: t('required') }
   }
 
-  let token: string
-  let expiresAt: string
+  let user: Awaited<ReturnType<typeof login>>
   try {
-    const user = await login(email, senha)
-    token = user.token
-    expiresAt = user.expiresAt
+    user = await login(email, senha, await getSignedLoginClientIdentity())
   } catch (error) {
     if (error instanceof ApiRequestError) {
       // 401 do backend vem como "E-mail ou senha invalidos."
@@ -48,25 +51,51 @@ export async function signInAction(
     return { error: t('network') }
   }
 
-  const cookieStore = await cookies()
-  cookieStore.set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    // Vem do proprio token (`expiraEm`, um OffsetDateTime — a unica data da API
-    // que e instante de verdade). Amarrar o cookie a vida do token faz os dois
-    // morrerem juntos, em vez de sobrar cookie apontando para token expirado.
-    expires: new Date(expiresAt),
-  })
+  await writeAuthenticatedSession(user)
 
   // `redirect` lanca uma excecao de controle do Next; fica fora do try/catch
   // acima de proposito, senao seria capturada como erro de login.
-  redirect(from)
+  redirect(user.passwordChangeRequired ? '/alterar-senha' : from)
+}
+
+export async function changePasswordAction(
+  _previousState: PasswordChangeFormState,
+  formData: FormData,
+): Promise<PasswordChangeFormState> {
+  const t = await getTranslations('PasswordChange')
+  const currentPassword = String(formData.get('currentPassword') ?? '')
+  const newPassword = String(formData.get('newPassword') ?? '')
+  const confirmation = String(formData.get('confirmation') ?? '')
+  const fieldErrors: PasswordChangeFormState['fieldErrors'] = {}
+
+  if (!currentPassword) fieldErrors.currentPassword = t('validation.currentRequired')
+  if (!newPassword) fieldErrors.newPassword = t('validation.newRequired')
+  if (!confirmation) fieldErrors.confirmation = t('validation.confirmationRequired')
+  else if (newPassword !== confirmation) fieldErrors.confirmation = t('validation.passwordMismatch')
+
+  if (Object.keys(fieldErrors).length > 0) return { fieldErrors }
+
+  let user: Awaited<ReturnType<typeof changePassword>>
+  try {
+    user = await changePassword(currentPassword, newPassword)
+  } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      redirectToExpiredSession('/alterar-senha')
+    }
+    if (error instanceof ApiRequestError) {
+      if (error.code === 'INVALID_CURRENT_PASSWORD') return { error: t('errors.invalidCurrent') }
+      if (error.code === 'WEAK_PASSWORD') return { error: t('errors.weakPassword') }
+      if (error.code === 'PASSWORD_REUSE') return { error: t('errors.passwordReuse') }
+      return { error: error.message }
+    }
+    return { error: t('errors.network') }
+  }
+
+  await writeAuthenticatedSession(user)
+  redirect('/')
 }
 
 export async function signOutAction(): Promise<void> {
-  const cookieStore = await cookies()
-  cookieStore.delete(SESSION_COOKIE)
+  await clearAuthenticatedSession()
   redirect('/login')
 }

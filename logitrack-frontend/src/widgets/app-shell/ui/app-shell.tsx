@@ -7,6 +7,7 @@ export function AppShell({
   children,
   maintenanceAlerts,
   userInitial,
+  isManager,
 }: {
   children: ReactNode
   maintenanceAlerts: {
@@ -15,10 +16,11 @@ export function AppShell({
     unavailable: boolean
   }
   userInitial: string
+  isManager: boolean
 }) {
   return (
     <div className="bg-background text-on-background font-body-md text-body-md min-h-full">
-      <Header maintenanceAlerts={maintenanceAlerts} userInitial={userInitial} />
+      <Header maintenanceAlerts={maintenanceAlerts} userInitial={userInitial} isManager={isManager} />
       <Sidebar />
       <main className="ml-0 mt-shell-header-height min-h-[calc(100vh-var(--spacing-shell-header-height))] p-4 sm:p-container-padding lg:ml-sidebar-width">
         {children}

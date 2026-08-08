@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { useEffect, useRef, useState, useTransition } from 'react'
@@ -13,7 +14,7 @@ const OPTIONS: readonly { locale: AppLocale; labelKey: 'portuguese' | 'english';
   { locale: 'en-US', labelKey: 'english', short: 'EN' },
 ]
 
-export function UserMenu({ userInitial }: { userInitial: string }) {
+export function UserMenu({ userInitial, isManager }: { userInitial: string; isManager: boolean }) {
   const t = useTranslations('UserMenu')
   const shellT = useTranslations('Shell')
   const locale = useLocale()
@@ -105,6 +106,32 @@ export function UserMenu({ userInitial }: { userInitial: string }) {
                 </button>
               )
             })}
+          </div>
+          <div className="border-t border-outline-variant p-2">
+            <Link
+              href="/alterar-senha"
+              role="menuitem"
+              onClick={() => setIsOpen(false)}
+              className="flex w-full items-center gap-3 rounded-xs px-3 py-2.5 text-left text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:outline-primary"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-container text-on-primary-container">
+                <Icon name="lock_reset" className="text-[18px]" />
+              </span>
+              <span className="font-body-md text-body-md font-medium">{t('changePassword')}</span>
+            </Link>
+            {isManager && (
+              <Link
+                href="/usuarios"
+                role="menuitem"
+                onClick={() => setIsOpen(false)}
+                className="flex w-full items-center gap-3 rounded-xs px-3 py-2.5 text-left text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:outline-primary"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-container text-on-primary-container">
+                  <Icon name="person_add" className="text-[18px]" />
+                </span>
+                <span className="font-body-md text-body-md font-medium">{t('manageUsers')}</span>
+              </Link>
+            )}
           </div>
           <form action={signOutAction} className="border-t border-outline-variant p-2">
             <button

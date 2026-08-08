@@ -10,13 +10,14 @@ import { BrandIdentity } from './brand-identity'
 import { MaintenanceAlerts } from './maintenance-alerts'
 import { UserMenu } from './user-menu'
 
-export function Header({ maintenanceAlerts, userInitial }: {
+export function Header({ maintenanceAlerts, userInitial, isManager }: {
   maintenanceAlerts: {
     items: MaintenanceOrder[]
     total: number
     unavailable: boolean
   }
   userInitial: string
+  isManager: boolean
 }) {
   const pathname = usePathname()
   const t = useTranslations('Header')
@@ -34,6 +35,8 @@ export function Header({ maintenanceAlerts, userInitial }: {
     copy = { title: t('maintenanceServices.title'), subtitle: t('maintenanceServices.subtitle') }
   } else if (pathname === '/manutencoes') {
     copy = { title: t('maintenance.title'), subtitle: t('maintenance.subtitle') }
+  } else if (pathname === '/usuarios') {
+    copy = { title: t('users.title'), subtitle: t('users.subtitle') }
   }
 
   return (
@@ -87,7 +90,7 @@ export function Header({ maintenanceAlerts, userInitial }: {
           total={maintenanceAlerts.total}
           unavailable={maintenanceAlerts.unavailable}
         />
-        <UserMenu userInitial={userInitial} />
+        <UserMenu userInitial={userInitial} isManager={isManager} />
       </div>
     </nav>
   )

@@ -1,7 +1,13 @@
 type ApiErrorKey =
   | 'validationFailed'
+  | 'malformedRequest'
+  | 'invalidParameter'
+  | 'dataConflict'
   | 'invalidCredentials'
+  | 'loginRateLimit'
   | 'unauthorized'
+  | 'accessDenied'
+  | 'passwordChangeRequired'
   | 'resourceNotFound'
   | 'driverHasTrips'
   | 'licenseExists'
@@ -101,6 +107,23 @@ type ApiErrorKey =
 type ResolvedApiError = {
   key: ApiErrorKey
   values?: Record<string, string | number>
+}
+
+const BY_CODE: Record<string, ApiErrorKey> = {
+  VALIDATION_ERROR: 'validationFailed',
+  MALFORMED_REQUEST: 'malformedRequest',
+  INVALID_PARAMETER: 'invalidParameter',
+  DATA_CONFLICT: 'dataConflict',
+  INVALID_CREDENTIALS: 'invalidCredentials',
+  LOGIN_RATE_LIMIT_EXCEEDED: 'loginRateLimit',
+  AUTHENTICATION_REQUIRED: 'unauthorized',
+  ACCESS_DENIED: 'accessDenied',
+  PASSWORD_CHANGE_REQUIRED: 'passwordChangeRequired',
+}
+
+export function resolveApiErrorCode(code: string): ResolvedApiError | undefined {
+  const key = BY_CODE[code]
+  return key ? { key } : undefined
 }
 
 const EXACT: Record<string, ApiErrorKey> = {
@@ -207,7 +230,7 @@ export function resolveApiError(message: string): ResolvedApiError | undefined {
   let match = /^.+ de id (\d+) nao encontrado\.$/.exec(message)
   if (match) return { key: 'resourceNotFound', values: { id: match[1] } }
 
-  match = /^Nao e possivel excluir veiculo com viagens, manutencoes ou despesas: (.+)\.$/.exec(message)
+  match = /^Nao e possivel excluir veiculo com viagens ou manutencoes: (.+)\.$/.exec(message)
   if (match) return { key: 'vehicleHasHistory', values: { plates: match[1] } }
 
   match = /^Ja existe um veiculo cadastrado com a placa (.+)\.$/.exec(message)

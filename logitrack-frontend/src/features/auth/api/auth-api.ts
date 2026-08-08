@@ -1,6 +1,8 @@
 import 'server-only'
 
-import { apiFetchPublic } from '@/shared/api/server-fetch'
+import { apiFetch, apiFetchPublic } from '@/shared/api/server-fetch'
+
+export type UserRole = 'OPERADOR' | 'GESTOR'
 
 /** Espelho de `LoginRequest`/`LoginResponse` do backend. */
 type LoginRequestDto = {
@@ -14,28 +16,54 @@ type LoginResponseDto = {
   expiraEm: string
   nome: string
   email: string
-  perfil: 'OPERADOR' | 'GESTOR'
+  perfil: UserRole
+  trocaSenhaObrigatoria: boolean
 }
 
-type AuthenticatedUser = {
+export type AuthenticatedUser = {
   token: string
   expiresAt: string
   name: string
   email: string
-  role: 'OPERADOR' | 'GESTOR'
+  role: UserRole
+  passwordChangeRequired: boolean
 }
 
-export async function login(email: string, senha: string): Promise<AuthenticatedUser> {
-  const dto = await apiFetchPublic<LoginResponseDto>('/api/auth/login', {
-    method: 'POST',
-    body: { email, senha } satisfies LoginRequestDto,
-  })
-
+function toAuthenticatedUser(dto: LoginResponseDto): AuthenticatedUser {
   return {
     token: dto.token,
     expiresAt: dto.expiraEm,
     name: dto.nome,
     email: dto.email,
     role: dto.perfil,
+    passwordChangeRequired: dto.trocaSenhaObrigatoria,
   }
+}
+
+export async function login(
+  email: string,
+  senha: string,
+  signedClientIdentity: string,
+): Promise<AuthenticatedUser> {
+  const dto = await apiFetchPublic<LoginResponseDto>('/api/auth/login', {
+    method: 'POST',
+    body: { email, senha } satisfies LoginRequestDto,
+    headers: { 'X-Logap-Login-Client': signedClientIdentity },
+  })
+
+  return toAuthenticatedUser(dto)
+}
+
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<AuthenticatedUser> {
+  const dto = await apiFetch<LoginResponseDto>('/api/auth/password', {
+    method: 'PATCH',
+    body: {
+      senhaAtual: currentPassword,
+      novaSenha: newPassword,
+    },
+  })
+  return toAuthenticatedUser(dto)
 }

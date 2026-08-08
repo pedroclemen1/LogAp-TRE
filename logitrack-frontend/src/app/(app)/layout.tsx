@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react'
-import { getSessionAvatarInitial } from '@/features/auth/api/session-avatar'
+import { avatarInitialFromEmail } from '@/features/auth/lib/avatar-initial'
+import { getSessionUser } from '@/features/auth/api/session-user'
 import { fetchOverdueMaintenances } from '@/features/maintenance/api/maintenance-api'
 import { withOptionalSession } from '@/shared/api/require-session'
 import { AppShell } from '@/widgets/app-shell/ui/app-shell'
 
 export default async function AuthenticatedLayout({ children }: { children: ReactNode }) {
-  const [maintenanceAlerts, userInitial] = await Promise.all([
+  const [maintenanceAlerts, sessionUser] = await Promise.all([
     withOptionalSession(
       '/',
       async () => {
@@ -14,8 +15,16 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
       },
       { items: [], total: 0, unavailable: true },
     ),
-    getSessionAvatarInitial(),
+    getSessionUser(),
   ])
 
-  return <AppShell maintenanceAlerts={maintenanceAlerts} userInitial={userInitial}>{children}</AppShell>
+  return (
+    <AppShell
+      maintenanceAlerts={maintenanceAlerts}
+      userInitial={avatarInitialFromEmail(sessionUser?.email)}
+      isManager={sessionUser?.role === 'GESTOR'}
+    >
+      {children}
+    </AppShell>
+  )
 }

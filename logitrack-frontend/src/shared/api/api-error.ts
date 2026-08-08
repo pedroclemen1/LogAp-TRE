@@ -9,6 +9,7 @@ export type ApiErrorBody = {
   timestamp: string
   status: number
   error: string
+  code?: string
   message: string
   path: string
   campos?: Record<string, string>
@@ -17,14 +18,16 @@ export type ApiErrorBody = {
 /** Falha de uma chamada a API com resposta HTTP. */
 export class ApiRequestError extends Error {
   readonly status: number
+  readonly code?: string
   /** Erros por campo, quando o backend devolveu 400 de validacao. */
   readonly fieldErrors?: Record<string, string>
 
-  constructor(status: number, message: string, fieldErrors?: Record<string, string>) {
+  constructor(status: number, message: string, fieldErrors?: Record<string, string>, code?: string) {
     super(message)
     this.name = 'ApiRequestError'
     this.status = status
     this.fieldErrors = fieldErrors
+    this.code = code
   }
 }
 
@@ -35,16 +38,16 @@ export class ApiRequestError extends Error {
  * e mandar para o login, em vez de mostrar uma tela de erro.
  */
 export class UnauthorizedError extends ApiRequestError {
-  constructor(message = 'Sessão expirada.') {
-    super(401, message)
+  constructor(message = 'Sessão expirada.', code?: string) {
+    super(401, message, undefined, code)
     this.name = 'UnauthorizedError'
   }
 }
 
 /** 404: usado pelas telas de detalhe para chamar `notFound()`. */
 export class NotFoundError extends ApiRequestError {
-  constructor(message = 'Recurso não encontrado.') {
-    super(404, message)
+  constructor(message = 'Recurso não encontrado.', code?: string) {
+    super(404, message, undefined, code)
     this.name = 'NotFoundError'
   }
 }

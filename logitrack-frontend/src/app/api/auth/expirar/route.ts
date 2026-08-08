@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { SESSION_COOKIE } from '@/shared/config/session'
+import { PASSWORD_CHANGE_REQUIRED_COOKIE, SESSION_COOKIE } from '@/shared/config/session'
 import { sanitizeInternalPath } from '@/features/auth/lib/internal-path'
 
 /**
@@ -22,5 +22,6 @@ export function GET(request: NextRequest) {
 
   const response = NextResponse.redirect(loginUrl)
   response.cookies.delete(SESSION_COOKIE)
+  response.cookies.delete(PASSWORD_CHANGE_REQUIRED_COOKIE)
   return response
 }

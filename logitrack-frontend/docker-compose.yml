@@ -6,6 +6,7 @@ services:
     environment:
       API_BASE_URL: ${DOCKER_API_BASE_URL:-http://host.docker.internal:8080}
       API_REQUEST_TIMEOUT_MS: ${API_REQUEST_TIMEOUT_MS:-15000}
+      BFF_SHARED_SECRET: ${BFF_SHARED_SECRET:-dev-bff-secret-trocar-com-no-minimo-32-bytes}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:

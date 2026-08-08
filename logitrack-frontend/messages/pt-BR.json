@@ -30,7 +30,9 @@
     "portuguese": "Português (Brasil)",
     "english": "English (US)",
     "selected": "Idioma selecionado",
-    "changing": "Alterando idioma..."
+    "changing": "Alterando idioma...",
+    "manageUsers": "Convidar usuários",
+    "changePassword": "Alterar senha"
   },
   "Navigation": {
     "overview": "Visão geral",
@@ -93,6 +95,10 @@
     "manifests": {
       "title": "Gestão de Romaneios",
       "subtitle": "Emita e consulte os documentos de carga das viagens."
+    },
+    "users": {
+      "title": "Usuários e convites",
+      "subtitle": "Gere acessos individuais e acompanhe os dados do convite."
     }
   },
   "MaintenanceAlerts": {
@@ -126,12 +132,89 @@
     "showPassword": "Mostrar senha",
     "hidePassword": "Ocultar senha",
     "expired": "Sua sessão expirou. Entre novamente.",
+    "invitationAccepted": "Conta criada com sucesso. Entre com seu e-mail e sua nova senha.",
     "submit": "Entrar no sistema",
     "entering": "Entrando...",
     "secureConnection": "SYS.V.2.0.4 | CONEXÃO CRIPTOGRAFADA",
     "errors": {
       "required": "Informe e-mail e senha.",
       "invalidCredentials": "E-mail ou senha inválidos.",
+      "network": "Não foi possível contatar o servidor. Tente novamente."
+    }
+  },
+  "PasswordChange": {
+    "logoAlt": "Logo do LogiTrack Pro",
+    "title": "Defina uma nova senha",
+    "description": "Por segurança, altere a senha inicial antes de acessar o sistema.",
+    "currentPassword": "Senha atual",
+    "newPassword": "Nova senha",
+    "confirmation": "Confirme a nova senha",
+    "passwordHelp": "Use pelo menos 12 caracteres.",
+    "submit": "Salvar nova senha",
+    "saving": "Salvando...",
+    "logout": "Sair e voltar ao login",
+    "validation": {
+      "currentRequired": "Informe a senha atual.",
+      "newRequired": "Informe a nova senha.",
+      "confirmationRequired": "Confirme a nova senha.",
+      "passwordMismatch": "As senhas não coincidem."
+    },
+    "errors": {
+      "invalidCurrent": "A senha atual está incorreta.",
+      "weakPassword": "A nova senha deve possuir pelo menos 12 caracteres e respeitar o limite de 72 bytes.",
+      "passwordReuse": "A nova senha deve ser diferente da senha atual.",
+      "network": "Não foi possível contatar o servidor. Tente novamente."
+    }
+  },
+  "Invitation": {
+    "logoAlt": "Logo do LogiTrack Pro",
+    "name": "Nome",
+    "email": "E-mail",
+    "password": "Senha",
+    "confirmation": "Confirme a senha",
+    "passwordHelp": "Use pelo menos 12 caracteres.",
+    "role": "Perfil",
+    "expiresAt": "Expira em",
+    "roles": {
+      "OPERADOR": "Operador",
+      "GESTOR": "Gestor"
+    },
+    "accept": {
+      "title": "Crie sua conta",
+      "description": "O convite foi emitido para {email}. Defina seus dados de acesso.",
+      "submit": "Ativar conta",
+      "submitting": "Ativando..."
+    },
+    "invalid": {
+      "title": "Este convite não está disponível",
+      "backToLogin": "Voltar ao login"
+    },
+    "management": {
+      "formTitle": "Convidar usuário",
+      "formDescription": "Gere um link individual e envie-o ao destinatário por um canal seguro.",
+      "generate": "Gerar convite",
+      "generating": "Gerando...",
+      "resultTitle": "Link de ativação",
+      "resultDescription": "O link é temporário e pode ser usado uma única vez.",
+      "activationLink": "Link para compartilhar",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "empty": "O link aparecerá aqui depois que o convite for gerado."
+    },
+    "validation": {
+      "nameRequired": "Informe seu nome.",
+      "passwordRequired": "Informe uma senha.",
+      "passwordLength": "A senha deve possuir pelo menos 12 caracteres.",
+      "confirmationRequired": "Confirme a senha.",
+      "passwordMismatch": "As senhas não coincidem.",
+      "emailRequired": "Informe o e-mail.",
+      "roleRequired": "Selecione um perfil."
+    },
+    "errors": {
+      "invalid": "O link é inválido, expirou ou não existe mais.",
+      "weakPassword": "A senha deve possuir pelo menos 12 caracteres e respeitar o limite de 72 bytes.",
+      "emailAlreadyRegistered": "Já existe uma conta cadastrada com este e-mail.",
+      "accessDenied": "Apenas gestores podem criar convites.",
       "network": "Não foi possível contatar o servidor. Tente novamente."
     }
   },
@@ -147,7 +230,10 @@
     "newTrip": "Nova viagem | LogiTrack Pro",
     "tripDetails": "Detalhes da viagem | LogiTrack Pro",
     "maintenanceServices": "Serviços de manutenção | LogiTrack Pro",
-    "manifests": "Romaneios | LogiTrack Pro"
+    "manifests": "Romaneios | LogiTrack Pro",
+    "passwordChange": "Alterar senha | LogiTrack Pro",
+    "invitation": "Ativar conta | LogiTrack Pro",
+    "users": "Usuários | LogiTrack Pro"
   },
   "Dashboard": {
     "filters": {
@@ -278,7 +364,7 @@
       "updatedDescription": "Os dados da frota foram salvos com sucesso.",
       "deleteTitle": "Excluir veículo",
       "deleteDescription": "Deseja excluir somente {plate} ou selecionar outros?",
-      "deleteProtected": "Veículos com viagens, manutenções ou despesas são protegidos e não podem ser excluídos.",
+      "deleteProtected": "Veículos com viagens ou manutenções são protegidos e não podem ser excluídos.",
       "selectOthers": "Selecionar outros",
       "deleting": "Excluindo...",
       "deleteOnly": "Excluir somente este",
@@ -929,8 +1015,14 @@
   },
   "ApiErrors": {
     "validationFailed": "Verifique os campos informados.",
+    "malformedRequest": "A requisição enviada é inválida.",
+    "invalidParameter": "Um parâmetro da requisição é inválido.",
+    "dataConflict": "A operação conflita com os dados existentes.",
     "invalidCredentials": "E-mail ou senha inválidos.",
+    "loginRateLimit": "Muitas tentativas de login. Aguarde alguns minutos e tente novamente.",
     "unauthorized": "Sua sessão expirou. Entre novamente.",
+    "accessDenied": "Você não possui permissão para esta operação.",
+    "passwordChangeRequired": "Defina uma nova senha antes de continuar.",
     "resourceNotFound": "O recurso de ID {id} não foi encontrado.",
     "driverHasTrips": "Reatribua, cancele ou conclua as viagens não encerradas antes de desativar o motorista.",
     "licenseExists": "Já existe um motorista cadastrado com esta CNH.",
@@ -969,7 +1061,7 @@
     "canceledTripImmutable": "Uma viagem cancelada não pode ser alterada.",
     "driverAlreadyInTrip": "O motorista já está em uma viagem em andamento.",
     "dashboardPeriod": "O período do painel deve ser de 7 ou 30 dias.",
-    "vehicleHasHistory": "Não é possível excluir veículo com viagens, manutenções ou despesas: {plates}.",
+    "vehicleHasHistory": "Não é possível excluir veículo com viagens ou manutenções: {plates}.",
     "plateExists": "Já existe um veículo cadastrado com a placa {plate}.",
     "activeTripsBeforeDelete": "Cancele ou conclua as viagens em andamento antes de excluir: {ids}.",
     "stageBeforeDeparture": "A previsão do trecho {number} não pode ser anterior à partida.",
