@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/logitrack}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+
+  flyway:
+    locations: classpath:db/migration,classpath:db/seed
+
+app:
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
+  jwt:
+    secret: ${JWT_SECRET:dev-secret-trocar-em-producao-com-no-minimo-32-bytes}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:480}
+  invitation:
+    base-url: ${INVITATION_BASE_URL:http://localhost:3000/convite}
+  security:
+    bff:
+      shared-secret: ${BFF_SHARED_SECRET:dev-bff-secret-trocar-com-no-minimo-32-bytes}
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+logging:
+  level:
+    org.hibernate.SQL: INFO

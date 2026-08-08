@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-logitrack}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U ${DB_USER:-postgres} -d ${DB_NAME:-logitrack}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+    image: logitrack-backend:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME:-logitrack}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      SERVER_PORT: 8080
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-trocar-em-producao-com-no-minimo-32-bytes}
+      JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-480}
+      BFF_SHARED_SECRET: ${BFF_SHARED_SECRET:-dev-bff-secret-trocar-com-no-minimo-32-bytes}
+      BOOTSTRAP_ADMIN_ENABLED: ${BOOTSTRAP_ADMIN_ENABLED:-false}
+      BOOTSTRAP_ADMIN_NAME: ${BOOTSTRAP_ADMIN_NAME:-}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+      INVITATION_BASE_URL: ${INVITATION_BASE_URL:-http://localhost:3000/convite}
+      INVITATION_EXPIRATION_HOURS: ${INVITATION_EXPIRATION_HOURS:-48}
+      LOGIN_RATE_LIMIT_ENABLED: ${LOGIN_RATE_LIMIT_ENABLED:-true}
+      LOGIN_RATE_LIMIT_MAX_FAILED_ATTEMPTS: ${LOGIN_RATE_LIMIT_MAX_FAILED_ATTEMPTS:-5}
+      LOGIN_RATE_LIMIT_WINDOW: ${LOGIN_RATE_LIMIT_WINDOW:-15m}
+      LOGIN_RATE_LIMIT_CLEANUP_INTERVAL: ${LOGIN_RATE_LIMIT_CLEANUP_INTERVAL:-5m}
+      LOGIN_RATE_LIMIT_MAX_TRACKED_IDENTITIES: ${LOGIN_RATE_LIMIT_MAX_TRACKED_IDENTITIES:-10000}
+    ports:
+      - "${API_PORT:-8080}:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+volumes:
+  pgdata:
