@@ -171,8 +171,10 @@ banco e API estão na mesma região.
 
 ## Documentação
 
+- [Dicionário de campos](docs/dicionario-de-campos.md) — **o que digitar em cada formulário**:
+  formato, limites e valores aceitos, campo por campo
 - [Arquitetura](docs/arquitetura.md) — divisão dos módulos e serviços de aplicação
 - [Decisões técnicas](docs/decisoes-tecnicas.md) — contas, convites, RBAC, códigos de erro e
-  auditoria de N+1
+  prevenção de N+1
 - [Decisões de banco](docs/decisoes-de-banco.md) — schema, índices, migrations e as consultas do
   dashboard

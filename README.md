@@ -51,6 +51,10 @@ o demonstra na prática.
 | **Manutenções** | agendamento, catálogo de serviços e alertas de atraso |
 | **Idioma e tema** | português/inglês e claro/escuro, no menu do usuário |
 
+Para saber **o que digitar em cada campo** — formato da placa, dígitos da CNH e do CNPJ, limites de
+quilometragem e custo, janela de datas aceita — consulte o
+[dicionário de campos](logitrack-backend/docs/dicionario-de-campos.md).
+
 ### Duas coisas esperadas, para não parecerem defeito
 
 **A primeira visita pode levar de 30 a 60 segundos.** Os serviços estão no plano gratuito, que
