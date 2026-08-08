@@ -15,6 +15,56 @@ ciclo de deploy e sua documentação:
 
 ---
 
+## Demonstração
+
+**Aplicação publicada:** https://logitrack-web-eie7.onrender.com/login
+
+A API e o banco também estão no ar, como serviços independentes. O health check público da API
+responde em `/actuator/health`.
+
+### Como obter acesso
+
+O sistema **não possui cadastro público** — essa é uma decisão de segurança, não uma limitação.
+Contas entram exclusivamente por **convite individual** emitido por um gestor, com token de uso
+único e expiração de 48 horas.
+
+Para avaliar a aplicação:
+
+1. Entre em contato comigo informando o **e-mail** que deseja usar.
+2. Eu gero um convite e envio o link de ativação.
+3. Você abre o link, define **nome e senha**, e a conta é ativada.
+4. Faça login e explore a aplicação com esse acesso.
+
+Escolhi esse caminho em vez de publicar credenciais no README por dois motivos. Primeiro, deixar
+usuário e senha num repositório público entrega o ambiente a qualquer pessoa que encontre o link.
+Segundo, o fluxo de convite **é uma das funcionalidades a avaliar** — e o próprio processo de acesso
+o demonstra na prática.
+
+### Ao entrar, vale olhar
+
+| Onde | O que observa |
+|---|---|
+| **Visão geral** | as cinco métricas obrigatórias, todas extraídas por SQL nativo |
+| **Viagens** | rota com múltiplos trechos, início, conclusão trecho a trecho e cancelamento |
+| **Romaneios** | emissão por trecho, código de integridade e download em PDF |
+| **Frota** | status operacional derivado por consulta, sem coluna de status, e exportação CSV/XLS |
+| **Manutenções** | agendamento, catálogo de serviços e alertas de atraso |
+| **Idioma e tema** | português/inglês e claro/escuro, no menu do usuário |
+
+### Duas coisas esperadas, para não parecerem defeito
+
+**A primeira visita pode levar de 30 a 60 segundos.** Os serviços estão no plano gratuito, que
+hiberna por inatividade. O timeout do BFF foi elevado justamente para acomodar esse retorno. Depois
+do primeiro acesso, a navegação é imediata.
+
+**O ambiente publicado não contém a massa de demonstração.** O perfil de produção carrega apenas as
+migrations de schema; os dados fictícios pertencem exclusivamente ao perfil de desenvolvimento. Para
+ver o sistema com volume de dados sem depender de convite, suba o ambiente local — o seed traz
+frota, viagens, motoristas e manutenções prontos, e as credenciais estão em
+[Como rodar](#como-rodar).
+
+---
+
 ## Arquitetura em uma tela
 
 ```text
