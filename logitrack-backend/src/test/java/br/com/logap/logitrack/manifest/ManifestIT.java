@@ -108,7 +108,7 @@ class ManifestIT extends IntegrationTest {
         return new ManifestRequest(
             etapaId,
             "TransLogistica Brasil S/A",
-            "12.345.678/0001-90",
+            "12345678000190",
             "48291048",
             "Carreta Bau 3 Eixos",
             "Rod. Anhanguera, Km 38 - Cajamar, SP",
@@ -329,7 +329,7 @@ class ManifestIT extends IntegrationTest {
             ManifestResponse persistido = service.findById(emitido.id());
 
             ManifestResponse corrigido = service.update(emitido.id(), new ManifestRequest(
-                etapa1, "Outra Transportadora S/A", "99.999.999/0001-99", "77777",
+                etapa1, "Outra Transportadora S/A", "99999999000199", "77777",
                 "Truck Bau", "Novo endereco origem", "Novo endereco destino",
                 List.of(new ManifestItemRequest("NF-CERTA", "Beta", 7, new BigDecimal("77.7")))));
 
@@ -349,7 +349,7 @@ class ManifestIT extends IntegrationTest {
             ManifestResponse emitido = service.issue(pedido(etapa1, item("NF-1", "Alfa", 1, "10.0")));
 
             ManifestResponse corrigido = service.update(emitido.id(), new ManifestRequest(
-                etapa1, "TransLogistica Brasil S/A", "12.345.678/0001-90", "48291048",
+                etapa1, "TransLogistica Brasil S/A", "12345678000190", "48291048",
                 "Carreta Bau 3 Eixos", null, null,
                 List.of(new ManifestItemRequest("NF-1", "Alfa", 99, new BigDecimal("10.0")))));
 
@@ -380,7 +380,7 @@ class ManifestIT extends IntegrationTest {
             ManifestResponse emitido = service.issue(pedido(etapa1, item("NF-1", "Alfa", 1, "10.0")));
 
             ManifestResponse corrigido = service.update(emitido.id(), new ManifestRequest(
-                etapa1, "X S/A", "00.000.000/0001-00", null, "Outro veiculo", null, null,
+                etapa1, "X S/A", "00000000000100", null, "Outro veiculo", null, null,
                 List.of(new ManifestItemRequest("NF-1", "Alfa", 1, new BigDecimal("10.0")))));
 
             assertThat(corrigido.veiculoPlaca()).isEqualTo("RMN-0001");
