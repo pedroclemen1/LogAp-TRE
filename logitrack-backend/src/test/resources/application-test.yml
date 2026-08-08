@@ -1,0 +1,42 @@
+# Perfil de teste. A URL do banco NAO vem daqui: e injetada pelo
+# `@DynamicPropertySource` da classe base, apontando para o container efemero.
+spring:
+  flyway:
+    # Testes validam apenas o schema obrigatorio e criam seus proprios cenarios.
+    locations: classpath:db/migration
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: America/Sao_Paulo
+
+  jackson:
+    default-property-inclusion: non_null
+
+app:
+  cors:
+    allowed-origins: http://localhost:3000
+  jwt:
+    secret: segredo-de-teste-com-mais-de-32-bytes-para-hs256
+    expiration-minutes: 480
+  invitation:
+    base-url: http://localhost:3000/convite
+  security:
+    bff:
+      shared-secret: segredo-bff-de-teste-com-mais-de-32-bytes
+    login-rate-limit:
+      enabled: true
+      max-failed-attempts: 5
+      window: 15m
+      cleanup-interval: 5m
+      max-tracked-identities: 10000
+
+logging:
+  level:
+    org.hibernate.SQL: WARN
+    org.testcontainers: WARN
+    com.github.dockerjava: WARN
