@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
+import { getSessionUser } from '@/features/auth/api/session-user'
+import { canManageMasterData } from '@/features/auth/model/authorization'
 import { fetchDrivers } from '@/features/reference-data/api/drivers-api'
 import { DriversScreen } from '@/features/reference-data/components/drivers-screen'
 import { parseReferenceFilters, type ReferenceSearchParams } from '@/features/reference-data/model/reference-data'
@@ -12,6 +14,16 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function Page({ searchParams }: { searchParams: Promise<ReferenceSearchParams> }) {
   const filters = parseReferenceFilters(await searchParams)
-  const drivers = await withSession('/motoristas', () => fetchDrivers(filters))
-  return <DriversScreen drivers={drivers} filters={filters} />
+  const [drivers, sessionUser] = await Promise.all([
+    withSession('/motoristas', () => fetchDrivers(filters)),
+    getSessionUser(),
+  ])
+
+  return (
+    <DriversScreen
+      drivers={drivers}
+      filters={filters}
+      canManage={canManageMasterData(sessionUser?.role)}
+    />
+  )
 }

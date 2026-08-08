@@ -28,9 +28,10 @@ function hrefForPage(filters: FleetFilters, zeroBasedPage: number): string {
 type FleetScreenProps = {
   fleet: Paged<FleetVehicle>
   filters: FleetFilters
+  canManage: boolean
 }
 
-export function FleetScreen({ fleet, filters }: FleetScreenProps) {
+export function FleetScreen({ fleet, filters, canManage }: FleetScreenProps) {
   const t = useTranslations('Fleet.pagination')
   const locale = useLocale()
   const pages = paginationWindow(fleet.page, fleet.totalPages)
@@ -53,14 +54,16 @@ export function FleetScreen({ fleet, filters }: FleetScreenProps) {
 
   return (
     <div className="space-y-5 lg:space-y-6">
-      <div className="flex justify-stretch sm:justify-end">
-        <AddVehicleDialog />
-      </div>
+      {canManage && (
+        <div className="flex justify-stretch sm:justify-end">
+          <AddVehicleDialog />
+        </div>
+      )}
 
       <FleetToolbar filters={filters} exportCsvHref={exportCsvHref} exportXlsHref={exportXlsHref} />
 
       <Surface className="overflow-hidden shadow-sm">
-        <FleetTable vehicles={fleet.items} />
+        <FleetTable vehicles={fleet.items} canManage={canManage} />
 
         <TableFooter className="px-4 py-2">
           <span className="font-body-sm text-body-sm text-on-surface-variant">

@@ -2,12 +2,6 @@ import type { VehicleStatus } from '@/entities/vehicle/model/vehicle-status'
 import type { FleetVehicle, VehicleCategory } from '../model/vehicle'
 import type { FleetVehicleDto, VehicleOperationalStatusDto, VehicleTypeDto } from './fleet-dto'
 
-/**
- * O banco so conhece LEVE e PESADO — sao os dois valores da constraint CHECK em
- * `veiculos.tipo`, vinda do script do desafio. O design do Stitch previa uma
- * terceira categoria ("Cargo Van") que nao tem origem nenhuma, entao ela saiu
- * do modelo em vez de virar um valor que nunca aparece.
- */
 const CATEGORY_BY_TYPE: Record<VehicleTypeDto, VehicleCategory> = {
   PESADO: 'heavy',
   LEVE: 'light',
@@ -19,7 +13,6 @@ const STATUS_BY_OPERATIONAL: Record<VehicleOperationalStatusDto, VehicleStatus> 
   MANUTENCAO: 'maintenance',
 }
 
-/** Sentido inverso: filtro escolhido na tela vira parametro da API. */
 export const TYPE_BY_CATEGORY: Record<VehicleCategory, VehicleTypeDto> = {
   heavy: 'PESADO',
   light: 'LEVE',

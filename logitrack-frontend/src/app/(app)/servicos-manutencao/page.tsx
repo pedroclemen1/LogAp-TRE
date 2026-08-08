@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
+import { getSessionUser } from '@/features/auth/api/session-user'
+import { canManageMasterData } from '@/features/auth/model/authorization'
 import { fetchMaintenanceServices } from '@/features/reference-data/api/maintenance-services-api'
 import { MaintenanceServicesScreen } from '@/features/reference-data/components/maintenance-services-screen'
 import { parseReferenceFilters, type ReferenceSearchParams } from '@/features/reference-data/model/reference-data'
@@ -12,6 +14,16 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function Page({ searchParams }: { searchParams: Promise<ReferenceSearchParams> }) {
   const filters = parseReferenceFilters(await searchParams)
-  const services = await withSession('/servicos-manutencao', () => fetchMaintenanceServices(filters))
-  return <MaintenanceServicesScreen services={services} filters={filters} />
+  const [services, sessionUser] = await Promise.all([
+    withSession('/servicos-manutencao', () => fetchMaintenanceServices(filters)),
+    getSessionUser(),
+  ])
+
+  return (
+    <MaintenanceServicesScreen
+      services={services}
+      filters={filters}
+      canManage={canManageMasterData(sessionUser?.role)}
+    />
+  )
 }

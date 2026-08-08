@@ -16,9 +16,10 @@ import { MaintenanceServiceForm } from './maintenance-service-form'
 import { RecordStatusBadge } from './record-status-badge'
 import { ReferenceToolbar } from './reference-toolbar'
 
-export function MaintenanceServicesScreen({ services, filters }: {
+export function MaintenanceServicesScreen({ services, filters, canManage }: {
   services: readonly MaintenanceServiceItem[]
   filters: ReferenceFilters
+  canManage: boolean
 }) {
   const t = useTranslations('Reference.services')
   const router = useRouter()
@@ -66,11 +67,13 @@ export function MaintenanceServicesScreen({ services, filters }: {
 
   return (
     <div className="space-y-5 lg:space-y-6">
-      <div className="flex justify-stretch sm:justify-end">
-        <Button variant="primary" onClick={() => setFormTarget(null)} className="h-10 w-full px-6 sm:w-auto">
-          <Icon name="add" className="text-[18px]" /> {t('addButton')}
-        </Button>
-      </div>
+      {canManage && (
+        <div className="flex justify-stretch sm:justify-end">
+          <Button variant="primary" onClick={() => setFormTarget(null)} className="h-10 w-full px-6 sm:w-auto">
+            <Icon name="add" className="text-[18px]" /> {t('addButton')}
+          </Button>
+        </div>
+      )}
       <ReferenceToolbar pathname="/servicos-manutencao" filters={filters} placeholder={t('searchPlaceholder')} />
       {message && !deactivateTarget && (
         <p role="alert" className="rounded-xs bg-error-container px-4 py-3 text-body-sm text-on-error-container">{message}</p>
@@ -83,28 +86,30 @@ export function MaintenanceServicesScreen({ services, filters }: {
                 <TableHead className="w-24 px-4 py-3">{t('table.id')}</TableHead>
                 <TableHead className="px-4 py-3">{t('table.name')}</TableHead>
                 <TableHead className="w-36 px-4 py-3">{t('table.status')}</TableHead>
-                <TableHead className="w-28 px-4 py-3 text-right">{t('table.actions')}</TableHead>
+                {canManage && <TableHead className="w-28 px-4 py-3 text-right">{t('table.actions')}</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y divide-outline-variant/50 bg-surface">
               {services.length === 0 && (
-                <TableRow><TableCell colSpan={4} className="p-8 text-center text-on-surface-variant">{t('table.empty')}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={canManage ? 4 : 3} className="p-8 text-center text-on-surface-variant">{t('table.empty')}</TableCell></TableRow>
               )}
               {services.map((service) => (
                 <TableRow key={service.id} className="h-compact-row-height hover:bg-surface-container-low">
                   <TableCell className="px-4 py-2 font-data-mono text-data-mono text-on-surface-variant">#{service.id}</TableCell>
                   <TableCell className="px-4 py-2 font-medium text-on-surface">{service.name}</TableCell>
                   <TableCell className="px-4 py-2"><RecordStatusBadge active={service.active} /></TableCell>
-                  <TableCell className="px-4 py-2">
-                    <div className="flex justify-end gap-1">
-                      <IconButton aria-label={t('editAria', { name: service.name })} title={t('edit')} icon="edit" className="h-7 w-7 text-primary" iconClassName="text-[17px]" onClick={() => setFormTarget(service)} />
-                      {service.active ? (
-                        <IconButton aria-label={t('deactivateAria', { name: service.name })} title={t('deactivate')} icon="delete" className="h-7 w-7 text-error" iconClassName="text-[17px]" onClick={() => { setMessage(undefined); setDeactivateTarget(service) }} />
-                      ) : (
-                        <IconButton aria-label={t('reactivateAria', { name: service.name })} title={t('reactivate')} icon="restore" className="h-7 w-7 text-primary" iconClassName="text-[17px]" disabled={isPending} onClick={() => reactivate(service)} />
-                      )}
-                    </div>
-                  </TableCell>
+                  {canManage && (
+                    <TableCell className="px-4 py-2">
+                      <div className="flex justify-end gap-1">
+                        <IconButton aria-label={t('editAria', { name: service.name })} title={t('edit')} icon="edit" className="h-7 w-7 text-primary" iconClassName="text-[17px]" onClick={() => setFormTarget(service)} />
+                        {service.active ? (
+                          <IconButton aria-label={t('deactivateAria', { name: service.name })} title={t('deactivate')} icon="delete" className="h-7 w-7 text-error" iconClassName="text-[17px]" onClick={() => { setMessage(undefined); setDeactivateTarget(service) }} />
+                        ) : (
+                          <IconButton aria-label={t('reactivateAria', { name: service.name })} title={t('reactivate')} icon="restore" className="h-7 w-7 text-primary" iconClassName="text-[17px]" disabled={isPending} onClick={() => reactivate(service)} />
+                        )}
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
@@ -115,44 +120,48 @@ export function MaintenanceServicesScreen({ services, filters }: {
         </div>
       </Surface>
 
-      <Modal
-        open={formTarget !== undefined}
-        onClose={() => setFormTarget(undefined)}
-        title={formTarget ? t('formModal.editTitle') : t('formModal.addTitle')}
-        description={formTarget ? t('formModal.editDescription', { name: formTarget.name }) : t('formModal.addDescription')}
-      >
-        {formTarget !== undefined && (
-          <MaintenanceServiceForm
-            key={formTarget?.id ?? 'new'}
-            service={formTarget ?? undefined}
-            onSuccess={() => refreshAndClose({
-              title: formTarget ? t('updatedTitle') : t('createdTitle'),
-              description: formTarget ? t('updatedDescription', { name: formTarget.name }) : t('createdDescription'),
-            })}
-            onCancel={() => setFormTarget(undefined)}
-          />
-        )}
-      </Modal>
+      {canManage && (
+        <Modal
+          open={formTarget !== undefined}
+          onClose={() => setFormTarget(undefined)}
+          title={formTarget ? t('formModal.editTitle') : t('formModal.addTitle')}
+          description={formTarget ? t('formModal.editDescription', { name: formTarget.name }) : t('formModal.addDescription')}
+        >
+          {formTarget !== undefined && (
+            <MaintenanceServiceForm
+              key={formTarget?.id ?? 'new'}
+              service={formTarget ?? undefined}
+              onSuccess={() => refreshAndClose({
+                title: formTarget ? t('updatedTitle') : t('createdTitle'),
+                description: formTarget ? t('updatedDescription', { name: formTarget.name }) : t('createdDescription'),
+              })}
+              onCancel={() => setFormTarget(undefined)}
+            />
+          )}
+        </Modal>
+      )}
 
-      <Modal
-        open={deactivateTarget !== undefined}
-        onClose={() => { if (!isPending) setDeactivateTarget(undefined) }}
-        title={t('deactivateModal.title')}
-        description={deactivateTarget ? t('deactivateModal.description', { name: deactivateTarget.name }) : undefined}
-      >
-        <div className="space-y-4">
-          <p className="text-body-sm text-on-surface-variant">
-            {t('deactivateModal.body')}
-          </p>
-          {message && <p role="alert" className="rounded-xs bg-error-container px-3 py-2 text-body-sm text-on-error-container">{message}</p>}
-          <div className="flex justify-end gap-2">
-            <Button onClick={() => setDeactivateTarget(undefined)} disabled={isPending}>{t('deactivateModal.cancel')}</Button>
-            <Button variant="danger" onClick={deactivate} disabled={isPending}>
-              <Icon name="delete" className="text-[18px]" /> {isPending ? t('deactivateModal.deactivating') : t('deactivateModal.confirm')}
-            </Button>
+      {canManage && (
+        <Modal
+          open={deactivateTarget !== undefined}
+          onClose={() => { if (!isPending) setDeactivateTarget(undefined) }}
+          title={t('deactivateModal.title')}
+          description={deactivateTarget ? t('deactivateModal.description', { name: deactivateTarget.name }) : undefined}
+        >
+          <div className="space-y-4">
+            <p className="text-body-sm text-on-surface-variant">
+              {t('deactivateModal.body')}
+            </p>
+            {message && <p role="alert" className="rounded-xs bg-error-container px-3 py-2 text-body-sm text-on-error-container">{message}</p>}
+            <div className="flex justify-end gap-2">
+              <Button onClick={() => setDeactivateTarget(undefined)} disabled={isPending}>{t('deactivateModal.cancel')}</Button>
+              <Button variant="danger" onClick={deactivate} disabled={isPending}>
+                <Icon name="delete" className="text-[18px]" /> {isPending ? t('deactivateModal.deactivating') : t('deactivateModal.confirm')}
+              </Button>
+            </div>
           </div>
-        </div>
-      </Modal>
+        </Modal>
+      )}
     </div>
   )
 }

@@ -1,10 +1,5 @@
 import type { VehicleStatus } from '@/entities/vehicle/model/vehicle-status'
 
-/**
- * Categorias reais: a coluna `veiculos.tipo` so aceita LEVE e PESADO, por
- * constraint CHECK do script fornecido no desafio. A "Cargo Van" do design nao
- * tem origem no banco e por isso nao existe aqui.
- */
 export const VEHICLE_CATEGORIES = ['heavy', 'light'] as const
 export type VehicleCategory = (typeof VEHICLE_CATEGORIES)[number]
 

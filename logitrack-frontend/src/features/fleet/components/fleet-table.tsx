@@ -28,7 +28,10 @@ function DeleteError({ message }: { message?: string }) {
   )
 }
 
-export function FleetTable({ vehicles }: { vehicles: readonly FleetVehicle[] }) {
+export function FleetTable({ vehicles, canManage }: {
+  vehicles: readonly FleetVehicle[]
+  canManage: boolean
+}) {
   const t = useTranslations('Fleet.table')
   const locale = useLocale()
   const controller = useFleetRowActionsController(vehicles)
@@ -36,7 +39,7 @@ export function FleetTable({ vehicles }: { vehicles: readonly FleetVehicle[] }) 
 
   return (
     <>
-      {controller.selectionMode && (
+      {canManage && controller.selectionMode && (
         <div className="flex flex-col gap-3 border-b border-outline-variant bg-primary/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="font-body-sm text-body-sm font-medium text-on-surface">
@@ -64,7 +67,7 @@ export function FleetTable({ vehicles }: { vehicles: readonly FleetVehicle[] }) 
       )}
 
       <div className="overflow-x-auto">
-        <Table className="min-w-[1000px]">
+        <Table className={canManage ? 'min-w-[1000px]' : 'min-w-[900px]'}>
           <TableHeader>
             <TableRow className="bg-surface-container-low border-b border-outline-variant font-label-caps text-label-caps text-on-surface-variant h-compact-row-height">
               <TableHead className={TH}>{t('plate')}</TableHead>
@@ -73,24 +76,26 @@ export function FleetTable({ vehicles }: { vehicles: readonly FleetVehicle[] }) 
               <TableHead className={TH}>{t('status')}</TableHead>
               <TableHead className={TH}>{t('lastTrip')}</TableHead>
               <TableHead className={TH}>{t('nextMaintenance')}</TableHead>
-              <TableHead className="px-4 py-2 w-24 text-center">
-                {controller.selectionMode ? (
-                  <Checkbox
-                    aria-label={t('selectAll')}
-                    checked={controller.allVisibleSelected}
-                    onChange={controller.toggleAll}
-                    className={CHECKBOX}
-                  />
-                ) : (
-                  <span>{t('actions')}</span>
-                )}
-              </TableHead>
+              {canManage && (
+                <TableHead className="px-4 py-2 w-24 text-center">
+                  {controller.selectionMode ? (
+                    <Checkbox
+                      aria-label={t('selectAll')}
+                      checked={controller.allVisibleSelected}
+                      onChange={controller.toggleAll}
+                      className={CHECKBOX}
+                    />
+                  ) : (
+                    <span>{t('actions')}</span>
+                  )}
+                </TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody className="font-body-sm text-body-sm divide-y divide-outline-variant/50">
             {vehicles.length === 0 && (
               <TableRow className="h-compact-row-height">
-                <TableCell colSpan={7} className="px-4 py-8 text-center text-on-surface-variant">
+                <TableCell colSpan={canManage ? 7 : 6} className="px-4 py-8 text-center text-on-surface-variant">
                   {t('empty')}
                 </TableCell>
               </TableRow>
@@ -130,112 +135,120 @@ export function FleetTable({ vehicles }: { vehicles: readonly FleetVehicle[] }) 
                 >
                   {vehicle.nextMaintenance ? formatDate(vehicle.nextMaintenance.scheduledFor, locale) : EMPTY}
                 </TableCell>
-                <TableCell className="px-4 py-1 text-center">
-                  {controller.selectionMode ? (
-                    <Checkbox
-                      aria-label={t('selectVehicle', { plate: vehicle.plate })}
-                      checked={controller.selectedIds.has(vehicle.id)}
-                      onChange={() => controller.toggleVehicle(vehicle.id)}
-                      className={CHECKBOX}
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center gap-1">
-                      <IconButton
-                        aria-label={t('editVehicle', { plate: vehicle.plate })}
-                        title={t('editVehicle', { plate: vehicle.plate })}
-                        icon="edit"
-                        iconClassName="text-[17px]"
-                        className="h-7 w-7 text-primary"
-                        onClick={() => controller.openEdit(vehicle)}
+                {canManage && (
+                  <TableCell className="px-4 py-1 text-center">
+                    {controller.selectionMode ? (
+                      <Checkbox
+                        aria-label={t('selectVehicle', { plate: vehicle.plate })}
+                        checked={controller.selectedIds.has(vehicle.id)}
+                        onChange={() => controller.toggleVehicle(vehicle.id)}
+                        className={CHECKBOX}
                       />
-                      <IconButton
-                        aria-label={t('deleteVehicle', { plate: vehicle.plate })}
-                        title={t('deleteVehicle', { plate: vehicle.plate })}
-                        icon="delete"
-                        iconClassName="text-[17px]"
-                        className="h-7 w-7 text-error"
-                        onClick={() => controller.requestDelete(vehicle)}
-                      />
-                    </div>
-                  )}
-                </TableCell>
+                    ) : (
+                      <div className="flex items-center justify-center gap-1">
+                        <IconButton
+                          aria-label={t('editVehicle', { plate: vehicle.plate })}
+                          title={t('editVehicle', { plate: vehicle.plate })}
+                          icon="edit"
+                          iconClassName="text-[17px]"
+                          className="h-7 w-7 text-primary"
+                          onClick={() => controller.openEdit(vehicle)}
+                        />
+                        <IconButton
+                          aria-label={t('deleteVehicle', { plate: vehicle.plate })}
+                          title={t('deleteVehicle', { plate: vehicle.plate })}
+                          icon="delete"
+                          iconClassName="text-[17px]"
+                          className="h-7 w-7 text-error"
+                          onClick={() => controller.requestDelete(vehicle)}
+                        />
+                      </div>
+                    )}
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
 
-      <Modal
-        open={controller.editingVehicle !== undefined}
-        onClose={controller.closeEdit}
-        title={t('editTitle')}
-        description={controller.editingVehicle ? t('editDescription', { plate: controller.editingVehicle.plate }) : undefined}
-      >
-        {controller.editingVehicle && (
-          <VehicleForm
-            key={controller.editingVehicle.id}
-            vehicle={controller.editingVehicle}
-            onSuccess={() => {
-              controller.closeEdit()
-              controller.refresh()
-              showToast({ tone: 'success', title: t('updatedTitle'), description: t('updatedDescription') })
-            }}
-            onCancel={controller.closeEdit}
-          />
-        )}
-      </Modal>
+      {canManage && (
+        <Modal
+          open={controller.editingVehicle !== undefined}
+          onClose={controller.closeEdit}
+          title={t('editTitle')}
+          description={controller.editingVehicle ? t('editDescription', { plate: controller.editingVehicle.plate }) : undefined}
+        >
+          {controller.editingVehicle && (
+            <VehicleForm
+              key={controller.editingVehicle.id}
+              vehicle={controller.editingVehicle}
+              onSuccess={() => {
+                controller.closeEdit()
+                controller.refresh()
+                showToast({ tone: 'success', title: t('updatedTitle'), description: t('updatedDescription') })
+              }}
+              onCancel={controller.closeEdit}
+            />
+          )}
+        </Modal>
+      )}
 
-      <Modal
-        open={controller.deleteTarget !== undefined}
-        onClose={controller.closeDeletePrompt}
-        title={t('deleteTitle')}
-        description={controller.deleteTarget ? t('deleteDescription', { plate: controller.deleteTarget.plate }) : undefined}
-      >
-        <div className="flex flex-col gap-4">
-          <p className="font-body-sm text-body-sm text-on-surface-variant">
-            {t('deleteProtected')}
-          </p>
-          <DeleteError message={controller.deleteError} />
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button variant="secondary" onClick={controller.closeDeletePrompt} disabled={controller.isDeleting}>
-              {t('cancel')}
-            </Button>
-            <Button variant="secondary" onClick={controller.selectOthers} disabled={controller.isDeleting}>
-              <Icon name="checklist" className="text-[18px]" />
-              {t('selectOthers')}
-            </Button>
-            <Button variant="danger" onClick={controller.deleteOnlyTarget} disabled={controller.isDeleting}>
-              <Icon name="delete" className="text-[18px]" />
-              {controller.isDeleting ? t('deleting') : t('deleteOnly')}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
-        open={controller.bulkConfirmationOpen}
-        onClose={controller.closeBulkConfirmation}
-        title={t('bulkDeleteTitle')}
-        description={t('bulkDeleteDescription', { count: controller.selected.length })}
-      >
-        <div className="flex flex-col gap-4">
-          <div className="max-h-32 overflow-y-auto rounded-xs border border-outline-variant bg-surface-container-low p-3">
-            <p className="font-data-mono text-data-mono text-on-surface">
-              {controller.selected.map((vehicle) => vehicle.plate).join(', ')}
+      {canManage && (
+        <Modal
+          open={controller.deleteTarget !== undefined}
+          onClose={controller.closeDeletePrompt}
+          title={t('deleteTitle')}
+          description={controller.deleteTarget ? t('deleteDescription', { plate: controller.deleteTarget.plate }) : undefined}
+        >
+          <div className="flex flex-col gap-4">
+            <p className="font-body-sm text-body-sm text-on-surface-variant">
+              {t('deleteProtected')}
             </p>
+            <DeleteError message={controller.deleteError} />
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variant="secondary" onClick={controller.closeDeletePrompt} disabled={controller.isDeleting}>
+                {t('cancel')}
+              </Button>
+              <Button variant="secondary" onClick={controller.selectOthers} disabled={controller.isDeleting}>
+                <Icon name="checklist" className="text-[18px]" />
+                {t('selectOthers')}
+              </Button>
+              <Button variant="danger" onClick={controller.deleteOnlyTarget} disabled={controller.isDeleting}>
+                <Icon name="delete" className="text-[18px]" />
+                {controller.isDeleting ? t('deleting') : t('deleteOnly')}
+              </Button>
+            </div>
           </div>
-          <DeleteError message={controller.deleteError} />
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={controller.closeBulkConfirmation} disabled={controller.isDeleting}>
-              {t('back')}
-            </Button>
-            <Button variant="danger" onClick={controller.confirmBulkDelete} disabled={controller.isDeleting}>
-              <Icon name="delete" className="text-[18px]" />
-              {controller.isDeleting ? t('deleting') : t('confirmDeletion')}
-            </Button>
+        </Modal>
+      )}
+
+      {canManage && (
+        <Modal
+          open={controller.bulkConfirmationOpen}
+          onClose={controller.closeBulkConfirmation}
+          title={t('bulkDeleteTitle')}
+          description={t('bulkDeleteDescription', { count: controller.selected.length })}
+        >
+          <div className="flex flex-col gap-4">
+            <div className="max-h-32 overflow-y-auto rounded-xs border border-outline-variant bg-surface-container-low p-3">
+              <p className="font-data-mono text-data-mono text-on-surface">
+                {controller.selected.map((vehicle) => vehicle.plate).join(', ')}
+              </p>
+            </div>
+            <DeleteError message={controller.deleteError} />
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={controller.closeBulkConfirmation} disabled={controller.isDeleting}>
+                {t('back')}
+              </Button>
+              <Button variant="danger" onClick={controller.confirmBulkDelete} disabled={controller.isDeleting}>
+                <Icon name="delete" className="text-[18px]" />
+                {controller.isDeleting ? t('deleting') : t('confirmDeletion')}
+              </Button>
+            </div>
           </div>
-        </div>
-      </Modal>
+        </Modal>
+      )}
     </>
   )
 }

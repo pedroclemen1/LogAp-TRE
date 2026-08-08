@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
+import { getSessionUser } from '@/features/auth/api/session-user'
+import { canManageMasterData } from '@/features/auth/model/authorization'
 import { fetchFleet } from '@/features/fleet/api/fleet-api'
 import { FleetScreen } from '@/features/fleet/components/fleet-screen'
 import { parseFleetFilters, type FleetSearchParams } from '@/features/fleet/model/fleet-filters'
@@ -19,7 +21,16 @@ export default async function Page({
   const params = await searchParams
   const filters = parseFleetFilters(params)
 
-  const fleet = await withSession('/frota', () => fetchFleet(parsePageParam(params.page), filters))
+  const [fleet, sessionUser] = await Promise.all([
+    withSession('/frota', () => fetchFleet(parsePageParam(params.page), filters)),
+    getSessionUser(),
+  ])
 
-  return <FleetScreen fleet={fleet} filters={filters} />
+  return (
+    <FleetScreen
+      fleet={fleet}
+      filters={filters}
+      canManage={canManageMasterData(sessionUser?.role)}
+    />
+  )
 }

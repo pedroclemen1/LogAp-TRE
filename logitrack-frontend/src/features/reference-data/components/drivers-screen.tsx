@@ -16,7 +16,11 @@ import { DriverForm } from './driver-form'
 import { DriverStatusBadge } from './record-status-badge'
 import { ReferenceToolbar } from './reference-toolbar'
 
-export function DriversScreen({ drivers, filters }: { drivers: readonly Driver[]; filters: ReferenceFilters }) {
+export function DriversScreen({ drivers, filters, canManage }: {
+  drivers: readonly Driver[]
+  filters: ReferenceFilters
+  canManage: boolean
+}) {
   const t = useTranslations('Reference.drivers')
   const router = useRouter()
   const { showToast } = useToast()
@@ -63,11 +67,13 @@ export function DriversScreen({ drivers, filters }: { drivers: readonly Driver[]
 
   return (
     <div className="space-y-5 lg:space-y-6">
-      <div className="flex justify-stretch sm:justify-end">
-        <Button variant="primary" onClick={() => setFormTarget(null)} className="h-10 w-full px-6 sm:w-auto">
-          <Icon name="person_add" className="text-[18px]" /> {t('addButton')}
-        </Button>
-      </div>
+      {canManage && (
+        <div className="flex justify-stretch sm:justify-end">
+          <Button variant="primary" onClick={() => setFormTarget(null)} className="h-10 w-full px-6 sm:w-auto">
+            <Icon name="person_add" className="text-[18px]" /> {t('addButton')}
+          </Button>
+        </div>
+      )}
       <ReferenceToolbar pathname="/motoristas" filters={filters} placeholder={t('searchPlaceholder')} />
       {message && !deactivateTarget && (
         <p role="alert" className="rounded-xs bg-error-container px-4 py-3 text-body-sm text-on-error-container">{message}</p>
@@ -81,12 +87,12 @@ export function DriversScreen({ drivers, filters }: { drivers: readonly Driver[]
                 <TableHead className="px-4 py-3">{t('table.license')}</TableHead>
                 <TableHead className="px-4 py-3">{t('table.phone')}</TableHead>
                 <TableHead className="px-4 py-3">{t('table.status')}</TableHead>
-                <TableHead className="w-28 px-4 py-3 text-right">{t('table.actions')}</TableHead>
+                {canManage && <TableHead className="w-28 px-4 py-3 text-right">{t('table.actions')}</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y divide-outline-variant/50 bg-surface">
               {drivers.length === 0 && (
-                <TableRow><TableCell colSpan={5} className="p-8 text-center text-on-surface-variant">{t('table.empty')}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={canManage ? 5 : 4} className="p-8 text-center text-on-surface-variant">{t('table.empty')}</TableCell></TableRow>
               )}
               {drivers.map((driver) => (
                 <TableRow key={driver.id} className="h-compact-row-height hover:bg-surface-container-low">
@@ -94,16 +100,18 @@ export function DriversScreen({ drivers, filters }: { drivers: readonly Driver[]
                   <TableCell className="px-4 py-2 font-data-mono text-data-mono text-on-surface-variant">{driver.license}</TableCell>
                   <TableCell className="px-4 py-2 text-on-surface-variant">{driver.phone || '—'}</TableCell>
                   <TableCell className="px-4 py-2"><DriverStatusBadge active={driver.active} inUse={driver.inUse} /></TableCell>
-                  <TableCell className="px-4 py-2">
-                    <div className="flex justify-end gap-1">
-                      <IconButton aria-label={t('editAria', { name: driver.name })} title={t('edit')} icon="edit" className="h-7 w-7 text-primary" iconClassName="text-[17px]" onClick={() => setFormTarget(driver)} />
-                      {driver.active ? (
-                        <IconButton aria-label={t('deactivateAria', { name: driver.name })} title={t('deactivate')} icon="person_off" className="h-7 w-7 text-error" iconClassName="text-[17px]" onClick={() => { setMessage(undefined); setDeactivateTarget(driver) }} />
-                      ) : (
-                        <IconButton aria-label={t('reactivateAria', { name: driver.name })} title={t('reactivate')} icon="person_check" className="h-7 w-7 text-primary" iconClassName="text-[17px]" disabled={isPending} onClick={() => reactivate(driver)} />
-                      )}
-                    </div>
-                  </TableCell>
+                  {canManage && (
+                    <TableCell className="px-4 py-2">
+                      <div className="flex justify-end gap-1">
+                        <IconButton aria-label={t('editAria', { name: driver.name })} title={t('edit')} icon="edit" className="h-7 w-7 text-primary" iconClassName="text-[17px]" onClick={() => setFormTarget(driver)} />
+                        {driver.active ? (
+                          <IconButton aria-label={t('deactivateAria', { name: driver.name })} title={t('deactivate')} icon="person_off" className="h-7 w-7 text-error" iconClassName="text-[17px]" onClick={() => { setMessage(undefined); setDeactivateTarget(driver) }} />
+                        ) : (
+                          <IconButton aria-label={t('reactivateAria', { name: driver.name })} title={t('reactivate')} icon="person_check" className="h-7 w-7 text-primary" iconClassName="text-[17px]" disabled={isPending} onClick={() => reactivate(driver)} />
+                        )}
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
@@ -114,44 +122,48 @@ export function DriversScreen({ drivers, filters }: { drivers: readonly Driver[]
         </div>
       </Surface>
 
-      <Modal
-        open={formTarget !== undefined}
-        onClose={() => setFormTarget(undefined)}
-        title={formTarget ? t('formModal.editTitle') : t('formModal.addTitle')}
-        description={formTarget ? t('formModal.editDescription', { name: formTarget.name }) : t('formModal.addDescription')}
-      >
-        {formTarget !== undefined && (
-          <DriverForm
-            key={formTarget?.id ?? 'new'}
-            driver={formTarget ?? undefined}
-            onSuccess={() => refreshAndClose({
-              title: formTarget ? t('updatedTitle') : t('createdTitle'),
-              description: formTarget ? t('updatedDescription', { name: formTarget.name }) : t('createdDescription'),
-            })}
-            onCancel={() => setFormTarget(undefined)}
-          />
-        )}
-      </Modal>
+      {canManage && (
+        <Modal
+          open={formTarget !== undefined}
+          onClose={() => setFormTarget(undefined)}
+          title={formTarget ? t('formModal.editTitle') : t('formModal.addTitle')}
+          description={formTarget ? t('formModal.editDescription', { name: formTarget.name }) : t('formModal.addDescription')}
+        >
+          {formTarget !== undefined && (
+            <DriverForm
+              key={formTarget?.id ?? 'new'}
+              driver={formTarget ?? undefined}
+              onSuccess={() => refreshAndClose({
+                title: formTarget ? t('updatedTitle') : t('createdTitle'),
+                description: formTarget ? t('updatedDescription', { name: formTarget.name }) : t('createdDescription'),
+              })}
+              onCancel={() => setFormTarget(undefined)}
+            />
+          )}
+        </Modal>
+      )}
 
-      <Modal
-        open={deactivateTarget !== undefined}
-        onClose={() => { if (!isPending) setDeactivateTarget(undefined) }}
-        title={t('deactivateModal.title')}
-        description={deactivateTarget ? t('deactivateModal.description', { name: deactivateTarget.name }) : undefined}
-      >
-        <div className="space-y-4">
-          <p className="text-body-sm text-on-surface-variant">
-            {t('deactivateModal.body')}
-          </p>
-          {message && <p role="alert" className="rounded-xs bg-error-container px-3 py-2 text-body-sm text-on-error-container">{message}</p>}
-          <div className="flex justify-end gap-2">
-            <Button onClick={() => setDeactivateTarget(undefined)} disabled={isPending}>{t('deactivateModal.cancel')}</Button>
-            <Button variant="danger" onClick={deactivate} disabled={isPending}>
-              <Icon name="person_off" className="text-[18px]" /> {isPending ? t('deactivateModal.deactivating') : t('deactivateModal.confirm')}
-            </Button>
+      {canManage && (
+        <Modal
+          open={deactivateTarget !== undefined}
+          onClose={() => { if (!isPending) setDeactivateTarget(undefined) }}
+          title={t('deactivateModal.title')}
+          description={deactivateTarget ? t('deactivateModal.description', { name: deactivateTarget.name }) : undefined}
+        >
+          <div className="space-y-4">
+            <p className="text-body-sm text-on-surface-variant">
+              {t('deactivateModal.body')}
+            </p>
+            {message && <p role="alert" className="rounded-xs bg-error-container px-3 py-2 text-body-sm text-on-error-container">{message}</p>}
+            <div className="flex justify-end gap-2">
+              <Button onClick={() => setDeactivateTarget(undefined)} disabled={isPending}>{t('deactivateModal.cancel')}</Button>
+              <Button variant="danger" onClick={deactivate} disabled={isPending}>
+                <Icon name="person_off" className="text-[18px]" /> {isPending ? t('deactivateModal.deactivating') : t('deactivateModal.confirm')}
+              </Button>
+            </div>
           </div>
-        </div>
-      </Modal>
+        </Modal>
+      )}
     </div>
   )
 }
