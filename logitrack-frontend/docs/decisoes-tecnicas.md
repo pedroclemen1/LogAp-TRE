@@ -20,12 +20,14 @@ Action substitui o JWT e sua expiração diretamente no cookie `HttpOnly` antes 
 só então remove o marcador de troca obrigatória. O token novo nunca é serializado para um componente
 client nem fica disponível ao JavaScript do navegador.
 
-### Inicial do avatar
+### Claims do JWT lidas apenas para apresentação
 
-O avatar usa a inicial do `sub` do JWT, que atualmente contém o e-mail. O payload também informa se
-o menu administrativo deve ser mostrado, mas é lido no servidor somente para apresentação e nunca
-participa da autorização efetiva. Toda autorização continua no backend, que valida a assinatura e
-o perfil atual do usuário.
+O servidor Next decodifica o payload do JWT para dois usos visuais: a inicial do avatar, a partir do
+`sub`, e a decisão de exibir o menu administrativo, a partir do perfil.
+
+Essa leitura **não é autorização** e não substitui verificação de assinatura. Quem valida assinatura,
+expiração e o perfil atual do usuário é o backend, que recarrega a role do banco a cada requisição.
+Uma requisição forjada continua recebendo `403`.
 
 Essa mesma leitura orienta a experiência das páginas de frota, motoristas e catálogo de serviços.
 O Server Component converte o perfil em uma capacidade booleana: o gestor recebe os controles de
@@ -47,9 +49,14 @@ tratamento de `204`, timeout e erros consistentes.
 conter as mesmas chaves e variáveis ICU. Essa regra é um teste Vitest, em vez de um script isolado,
 para que `npm test` seja a única entrada da suíte automatizada.
 
-Textos de interface nunca devem ser introduzidos diretamente em componentes quando dependem de
-idioma. Dados criados pelo usuário são preservados; somente nomes demonstrativos conhecidos podem
-ser associados a traduções predefinidas.
+Texto de interface nunca é escrito direto no componente: vai para o catálogo.
+
+Dado criado pelo usuário, ao contrário, **nunca é traduzido** — o nome de um serviço cadastrado pela
+operação aparece exatamente como foi digitado. A única exceção é um conjunto fechado de nomes que
+acompanham a massa de demonstração (`troca de oleo`, `revisao de freios`, `alinhamento`, `troca de
+pneus`): eles têm chave de tradução correspondente, para que a demonstração em inglês não exiba
+rótulos em português. O mapeamento é explícito e por nome normalizado, não uma heurística que possa
+alcançar dado real.
 
 ## Tema
 
@@ -72,9 +79,36 @@ O cliente converte respostas da API em `ApiRequestError`, `UnauthorizedError` ou
 Páginas usam um error boundary comum. Alertas de manutenção são complementares e usam fallback:
 uma falha nessa consulta não deve impedir o restante da aplicação de abrir.
 
-O frontend prioriza o campo estável `code` do `ApiError` nos fluxos novos e mantém a mensagem como
-fallback durante a migração dos erros anteriores. Isso permite traduzir regras de negócio sem
-acoplamento ao texto em português devolvido pela API.
+A tradução de erro tem duas vias, em `shared/api/api-error-localization.ts`: o campo estável `code`
+do `ApiError`, preferido, e o casamento exato da mensagem em português, herdado dos fluxos anteriores.
+São 9 códigos contra 90 mensagens literais.
+
+A via por `code` é a que se quer, porque desacopla a tradução do texto devolvido pela API. Enquanto
+existirem mensagens casadas literalmente, mudar o texto de um erro no backend quebra a tradução em
+silêncio — por isso toda regra nova recebe um código próprio.
+
+## Validação de entrada
+
+A validação acontece em três camadas, com propósitos diferentes:
+
+| Camada | Propósito | Protege? |
+|---|---|---|
+| Atributos do input (`min`, `max`, `maxLength`, `inputMode`) | impedir digitar o valor errado | não — o DevTools os remove |
+| Server Action | erro por campo antes de gastar uma chamada à API | não — Server Action é endpoint HTTP e pode ser chamada direto |
+| Bean Validation e regras de domínio no backend | **a autoridade** | sim |
+
+As duas primeiras existem pela experiência: descobrir o limite depois de preencher o formulário
+inteiro é pior do que não conseguir digitá-lo. Nenhuma delas dispensa a terceira.
+
+Dois casos merecem nota:
+
+**Dígitos apenas.** `inputMode="numeric"` é dica de teclado mobile e não impede letras no desktop.
+Onde o campo é numérico por natureza — CNPJ, CNH — a limpeza acontece no evento de entrada, o que
+também cobre colagem e arraste, e a Server Action normaliza antes de enviar.
+
+**Janela de datas.** Os limites `min`/`max` dos campos de data replicam a janela aceita pelo backend,
+e os valores precisam ser iguais nos dois lados: divergir produz o pior cenário, com o input aceitando
+o que o servidor recusa. Ver `shared/lib/date-window.ts`.
 
 ## Exportações e documentos
 

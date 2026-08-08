@@ -43,9 +43,12 @@ sem formatação. Datas, moedas e números só são formatados na apresentação
 ## Romaneios como submódulo de Viagens
 
 Romaneios operam sobre viagens e trechos, reutilizando os mesmos filtros, estados, opções de
-veículo e componentes de rota. Mantê-los em `features/manifest` criava dependência entre features
-irmãs. O módulo fica em `features/trips/manifest`, deixando explícito que é um caso de uso interno
-ao domínio de Viagens, sem duplicar modelos nem promover componentes específicos para `shared`.
+veículo e componentes de rota. Como `features/manifest`, o módulo criaria dependência entre features
+irmãs — proibida pela direção das dependências.
+
+Por isso ele fica em `features/trips/manifest`, o que deixa explícito que é um caso de uso interno ao
+domínio de Viagens. As duas alternativas seriam piores: duplicar os modelos, ou promover componentes
+específicos de viagem para `shared`, onde não teriam semântica.
 
 ## Server Components e componentes client
 

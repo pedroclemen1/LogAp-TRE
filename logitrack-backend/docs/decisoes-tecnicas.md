@@ -54,9 +54,10 @@ canais públicos, registrado em tickets nem mantido em logs. Para entrega
 automática em produção, a porta deve ser implementada com outbox, retry e
 sanitização de falhas antes de deixar de retornar o link ao gestor.
 
-Convites usados, revogados e expirados são preservados no piloto para auditoria.
-Antes de operação prolongada, deve ser definida uma retenção e uma limpeza
-agendada que nunca remova convites ainda utilizáveis.
+Convites usados, revogados e expirados são preservados, e não apagados, para que reste rastro de quem
+concedeu qual acesso. A contrapartida é crescimento indefinido da tabela: antes de operação
+prolongada, é preciso definir uma política de retenção e uma limpeza agendada que nunca remova
+convite ainda utilizável.
 
 ### Matriz de permissões
 
@@ -82,9 +83,9 @@ segredo é obrigatório em produção e sua rotação encerra todas as sessões.
 API inclui um `code` estável em `ApiError`; o frontend traduz pelo código e
 mantém `message` apenas para compatibilidade e diagnóstico.
 
-Tokens emitidos antes da introdução da versão de credenciais não possuem a
-claim exigida e são recusados. Esse comportamento é deliberado: o deploy da
-mudança encerra sessões antigas em vez de manter um caminho legado inseguro.
+Um token sem a claim de versão de credenciais é **recusado**, e não aceito por compatibilidade. A
+escolha é deliberada: aceitar token sem essa claim manteria um caminho em que a troca de senha não
+revoga a sessão anterior — exatamente a garantia que a versão existe para dar.
 
 Códigos relevantes:
 
@@ -152,7 +153,7 @@ visual existente.
 um JWT de usuário para promover ou reiniciar uma instância. `/api/health`
 continua autenticado e valida o caminho usado pelas demais rotas da aplicação.
 
-## Auditoria de consultas N+1
+## Prevenção de consultas N+1
 
 ### Critério
 
@@ -160,12 +161,12 @@ Uma consulta N+1 acontece quando a quantidade de SQL cresce junto com a
 quantidade de linhas retornadas, normalmente pela inicialização repetida de uma
 associação `LAZY`.
 
-A revisão combinou inspeção dos relacionamentos JPA com testes de orçamento de
-consultas usando `Hibernate Statistics`. Os testes criam cinco registros,
-consultam uma página com três itens e falham se o Hibernate fizer uma consulta
-adicional por linha.
+O controle não depende de disciplina de revisão: cada fluxo de listagem tem um
+**orçamento de statements** verificado por teste, com `Hibernate Statistics`. Os
+testes criam cinco registros, consultam uma página com três itens e falham se o
+Hibernate emitir consulta adicional por linha.
 
-### Fluxos revisados
+### Estratégia por fluxo
 
 | Fluxo | Estratégia | Limite de statements |
 |---|---|---:|
@@ -181,13 +182,14 @@ adicional por linha.
 O `count` da paginação está incluído nos limites. Em páginas finais o Spring
 pode omiti-lo, então os testes usam mais registros que o tamanho da página.
 
-### Problema corrigido
+### Escrita em lote no catálogo
 
-A criação e a edição de uma manutenção chamavam `findById` uma vez para cada
-serviço solicitado. O catálogo agora recebe todos os IDs e executa um único
-`findAllById`, validando em memória serviços ausentes ou inativos. Inserts dos
-itens continuam naturalmente proporcionais à quantidade gravada; o problema
-eliminado foi a multiplicação de `SELECT`s.
+Ao criar ou editar uma manutenção, o catálogo recebe **todos** os IDs de serviço de uma vez e resolve
+com um único `findAllById`, validando em memória os ausentes ou inativos. Um `findById` por serviço
+solicitado multiplicaria os `SELECT`s pela quantidade de linhas do formulário.
+
+Os `INSERT` dos itens continuam proporcionais à quantidade gravada, e isso é esperado: o que se evita
+é a multiplicação de leituras, não a escrita do que foi pedido.
 
 ### Proteção contra regressão
 

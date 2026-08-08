@@ -44,11 +44,11 @@ Locks pessimistas serializam alocação do mesmo veículo. Advisory locks do
 PostgreSQL protegem recursos que ainda não possuem uma linha para bloquear,
 como o primeiro gestor e um novo convite por e-mail.
 
-As antigas tabelas de abastecimentos e despesas foram removidas antes do
-primeiro deploy compartilhado junto com a página de relatórios, pois nenhum
-caso de uso restante as lia ou escrevia. Se esse domínio voltar ao produto, ele
-deve nascer em uma migration nova e com endpoints próprios, não como schema
-especulativo.
+O schema contém apenas tabelas que um caso de uso lê ou escreve. Combustível e
+despesas operacionais não fazem parte do escopo e, por isso, não têm tabela: se
+esse domínio entrar no produto, nasce em uma migration própria, com entidade e
+endpoints, e não como estrutura especulativa que o `validate` do Hibernate nem
+verificaria.
 
 ## Fronteiras de segurança
 
@@ -75,31 +75,26 @@ reutilizado.
 
 ## Decisão de arquitetura: vertical slice com costuras hexagonais
 
-**Data:** 2026-08-07
-**Status:** aceito
-**Contexto do plano:** `docs/PLANO-BACKEND.md`, Parte A
-
 ### Contexto
 
-O backend tem 86 arquivos Java e 4.692 linhas, organizados em **vertical slice**: um pacote por
-domínio (`auth`, `vehicle`, `trip`, `maintenance`, `maintenanceservice`, `driver`, `dashboard`),
-cada um fechado com controller, service, repository, entity e `dto/`. As entidades já eram **ricas**
-— `Trip.iniciar()/concluir()/cancelar()`, `Maintenance.iniciar()/concluir()` — e não meros sacos de
-getters.
+O código está organizado em **vertical slice**: um pacote por domínio, cada um fechado com
+controller, service, repository, entity e `dto/`. As entidades são **ricas** —
+`Trip.iniciar()/concluir()/cancelar()`, `Maintenance.iniciar()/concluir()` — e não sacos de getters.
 
-Ao planejar a suíte de testes (o projeto tinha **zero**), surgiu a pergunta: migrar para hexagonal
-(ports & adapters) ou para MVC padrão por camada técnica?
+A alternativa considerada era adotar hexagonal (ports & adapters) ou MVC por camada técnica. O
+critério de decisão foi testabilidade: quais mudanças permitiriam testar regra de negócio sem subir
+Spring nem banco.
 
-O diagnóstico mostrou que a arquitetura não era o obstáculo. Três detalhes de infraestrutura tinham
-vazado para dentro do domínio, e eram esses que travavam o teste:
+O diagnóstico mostrou que a organização dos pacotes não era o obstáculo. Três detalhes de
+infraestrutura acoplavam o domínio ao ambiente:
 
-1. **12 chamadas diretas ao relógio do sistema**, nenhum `Clock` injetado — incluindo
-   `LocalDate.now()` **dentro do DTO** `MaintenanceResponse`, derivando se a manutenção estava
-   atrasada. Qualquer teste de viagem, manutenção ou dashboard dependia do dia em que rodasse.
-2. **`SecurityContextHolder` estático** dentro de `TripService.currentAuthor()`, obrigando contexto
-   Spring em toda mutação de viagem só para saber quem assinou o evento.
-3. **Guardas de estado fora das entidades**: `TripService.start()` tinha cinco validações antes de
-   chamar `trip.iniciar()`. A entidade aceitava a transição em qualquer estado.
+1. **Chamadas diretas ao relógio do sistema**, sem `Clock` injetado — inclusive `LocalDate.now()`
+   dentro do DTO `MaintenanceResponse`, derivando se a manutenção estava atrasada. Qualquer teste de
+   viagem, manutenção ou dashboard dependia do dia em que rodasse.
+2. **`SecurityContextHolder` estático** dentro de `TripService`, exigindo contexto Spring em toda
+   mutação de viagem apenas para saber quem assinou o evento.
+3. **Guardas de estado fora das entidades**: as validações de transição viviam no serviço, e a
+   entidade aceitava a mudança em qualquer estado.
 
 ### Opções avaliadas
 
@@ -137,43 +132,49 @@ Manter o vertical slice e fechar as três costuras:
 
 | Costura | Implementação |
 |---|---|
-| Relógio | `config/TimeConfig` expõe `Clock` como bean; as 12 chamadas passaram a `now(clock)`. `Maintenance.estaAtrasada(LocalDate)` recebe o dia por parâmetro e a regra saiu do DTO. |
+| Relógio | `config/TimeConfig` expõe `Clock` como bean e nenhuma regra chama `now()` direto. `Maintenance.estaAtrasada(LocalDate)` recebe o dia por parâmetro, mantendo a derivação no domínio e fora do DTO. |
 | Autor da auditoria | Porta `shared/CurrentUserProvider`, implementada por `auth/SecurityContextCurrentUserProvider`. |
-| Guardas de estado | Movidas para `Trip` e `Maintenance`, com mensagens de erro preservadas byte a byte. |
+| Guardas de estado | Vivem em `Trip` e `Maintenance`, junto do estado que protegem. |
 
 #### Validar e aplicar separados
 
-`Trip` e `Maintenance` expõem `validarPodeIniciar()`/`validarPodeAlterar()` além dos métodos que
-mutam. Não é redundância acidental.
+`Trip` e `Maintenance` expõem `validarPodeIniciar()` e `validarPodeAlterar()` além dos métodos que
+mutam. A aparente duplicação é proposital.
 
-Os serviços precisam tomar o lock pessimista do veículo e consultar alocação **entre** a checagem de
-estado e a mutação. Se o serviço só chamasse `iniciar()`, o erro de alocação passaria a aparecer
-antes do erro de estado — invertendo a precedência atual, em que o erro de estado (mais específico
-para quem está na tela) vence. O serviço chama `validarPodeIniciar()` na posição onde as guardas
-ficavam, e o método que muta revalida para que a entidade nunca aceite transição inválida, mesmo se
-um chamador futuro esquecer o primeiro passo.
+O serviço precisa tomar o lock pessimista do veículo e consultar alocação **entre** a checagem de
+estado e a mutação. Se chamasse apenas `iniciar()`, o erro de alocação apareceria antes do erro de
+estado, invertendo a precedência desejada: o erro de estado é mais específico para quem está na tela
+e deve vencer. Por isso o serviço valida primeiro, e o método que muta revalida — a entidade nunca
+aceita transição inválida, mesmo que um chamador futuro esqueça o primeiro passo.
 
-#### Restrição que atravessa tudo
+#### Restrição sobre as mensagens de erro
 
-**As mensagens de erro não podem mudar de texto.** O frontend traduz erros da API casando **82
-strings em português literal** (`shared/api/api-error-localization.ts`). Alterar uma mensagem aqui
-quebra a i18n do front em silêncio. Ver `docs/PLANO-CORRECOES.md`, T1 — inclusive a recomendação de
-substituir esse acoplamento por um campo `code` estável no `ApiError`.
+O frontend traduz erros da API por duas vias: o campo estável `code` do `ApiError`, usado nos fluxos
+mais recentes, e o casamento exato da mensagem em português, herdado dos fluxos anteriores. Hoje são
+9 códigos e 90 mensagens literais em `shared/api/api-error-localization.ts`.
+
+Consequência prática: **alterar o texto de uma mensagem ainda quebra a tradução em silêncio.**
+Enquanto a migração para `code` não estiver completa, toda regra nova deve receber um código
+específico, e mudanças de texto precisam acompanhar o catálogo do frontend.
 
 ### Consequências
 
-**Positivas.** As regras de transição viraram testáveis com `new Trip(...)` e `assertThrows`, sem
-Spring e sem banco. Derivações que dependem de "hoje" ficaram determinísticas com `Clock.fixed`. A
-regra de atraso saiu de um objeto de serialização e voltou para o domínio.
+As regras de transição passaram a ser testáveis com `new Trip(...)` e `assertThrows`, sem Spring e
+sem banco. Derivações que dependem de "hoje" ficaram determinísticas com `Clock.fixed`.
 
-**Negativas.** Dois métodos públicos onde havia um, nas transições com lock — mitigado por
-comentário na entidade explicando o par. O `Clock` aparece no construtor de quatro serviços.
+O custo é modesto e visível: dois métodos públicos onde haveria um nas transições com lock, e o
+`Clock` no construtor de quatro serviços.
 
-**Aceito como dívida.** `TripService.flushAllocation()` e `MaintenanceService.start()` traduzem
-`DataIntegrityViolationException` casando o **nome da constraint por string**
-(`uk_viagens_em_andamento_motorista`, `uk_manutencoes_em_realizacao_veiculo`). Uma migration que
-renomeie a constraint transforma o erro amigável em HTTP 500 sem aviso. Não foi alterado nesta
-rodada; a proteção é o teste de concorrência (Parte B, B3.2), que exercita exatamente esse caminho.
+#### Limitação conhecida
+
+`TripService` e `MaintenanceService` traduzem `DataIntegrityViolationException` em erro de negócio
+comparando o **nome da constraint como texto** (`uk_viagens_em_andamento_motorista`,
+`uk_manutencoes_em_realizacao_veiculo`). Uma migration que renomeie a constraint transformaria o erro
+amigável em HTTP 500, sem aviso em tempo de compilação.
+
+A proteção atual é o teste de concorrência, que exercita exatamente esse caminho e falharia se a
+tradução parasse de funcionar. Uma solução mais robusta seria consultar o catálogo do PostgreSQL ou
+mapear o código de erro `23505` com verificação da coluna afetada.
 
 ### Quando reabrir
 
