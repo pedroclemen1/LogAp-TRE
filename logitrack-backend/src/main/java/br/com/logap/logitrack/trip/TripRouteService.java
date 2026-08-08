@@ -13,6 +13,7 @@ import java.util.stream.IntStream;
 
 import org.springframework.stereotype.Service;
 
+import br.com.logap.logitrack.shared.BusinessDateWindow;
 import br.com.logap.logitrack.shared.BusinessRuleException;
 import br.com.logap.logitrack.trip.dto.TripStageRequest;
 import br.com.logap.logitrack.trip.projection.TripRouteCityView;
@@ -27,9 +28,11 @@ class TripRouteService {
     private static final BigDecimal MAX_DECIMAL_10_2 = new BigDecimal("99999999.99");
 
     private final TripStageRepository repository;
+    private final BusinessDateWindow dateWindow;
 
-    TripRouteService(TripStageRepository repository) {
+    TripRouteService(TripStageRepository repository, BusinessDateWindow dateWindow) {
         this.repository = repository;
+        this.dateWindow = dateWindow;
     }
 
     Map<Integer, List<String>> loadRouteCities(List<Trip> trips) {
@@ -57,11 +60,17 @@ class TripRouteService {
         BigDecimal totalKm = BigDecimal.ZERO;
         LocalDateTime previousExpected = departure;
 
+        // Limite absoluto antes das regras relativas: sem ele, uma partida em
+        // 9999 satisfaz "ordem crescente" e passa.
+        dateWindow.validate(departure, "A data de saida");
+
         for (int index = 0; index < requests.size(); index++) {
             TripStageRequest stage = requests.get(index);
             totalKm = totalKm.add(stage.kmTrecho());
 
             if (stage.previstoEm() != null) {
+                dateWindow.validate(stage.previstoEm(),
+                    "A previsao do trecho %d".formatted(index + 1));
                 if (stage.previstoEm().isBefore(departure)) {
                     throw new BusinessRuleException(
                         "A previsao do trecho %d nao pode ser anterior a partida.".formatted(index + 1));

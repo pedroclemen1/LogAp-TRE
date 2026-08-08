@@ -47,6 +47,22 @@ export function formatCurrency(value: number, locale: AppLocale = DEFAULT_LOCALE
   return currencyFormats[locale].format(value)
 }
 
+/**
+ * "12345678000195" -> "12.345.678/0001-95".
+ *
+ * O CNPJ e persistido como 14 digitos; a pontuacao pertence a exibicao. Um
+ * valor que nao tenha exatamente 14 digitos e devolvido intacto em vez de
+ * fatiado: registro gravado antes desta regra continua legivel, e um dado
+ * inesperado aparece como esta em vez de virar texto mutilado.
+ */
+export function formatTaxId(value: string): string {
+  const digits = value.replace(/\D/g, '')
+  if (digits.length !== 14) return value
+
+  return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}`
+    + `/${digits.slice(8, 12)}-${digits.slice(12)}`
+}
+
 /** "145.280 km" (pt-BR) / "145,280 km" (en-US). */
 export function formatKilometers(value: number, locale: AppLocale = DEFAULT_LOCALE): string {
   return `${decimalFormats[locale].format(value)} km`

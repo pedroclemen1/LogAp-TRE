@@ -29,6 +29,7 @@ import br.com.logap.logitrack.maintenance.dto.MaintenanceItemRequest;
 import br.com.logap.logitrack.maintenance.dto.MaintenanceRequest;
 import br.com.logap.logitrack.maintenance.dto.MaintenanceResponse;
 import br.com.logap.logitrack.maintenance.dto.MaintenanceSummaryResponse;
+import br.com.logap.logitrack.shared.BusinessDateWindow;
 import br.com.logap.logitrack.shared.BusinessRuleException;
 import br.com.logap.logitrack.shared.ResourceNotFoundException;
 import br.com.logap.logitrack.shared.SearchPattern;
@@ -45,6 +46,7 @@ public class MaintenanceService {
     private final VehicleService vehicleService;
     private final VehicleAllocationService allocationService;
     private final MaintenanceServiceCatalogService catalogService;
+    private final BusinessDateWindow dateWindow;
     private final Clock clock;
 
     public MaintenanceService(MaintenanceRepository repository,
@@ -52,12 +54,14 @@ public class MaintenanceService {
                               VehicleService vehicleService,
                               VehicleAllocationService allocationService,
                               MaintenanceServiceCatalogService catalogService,
+                              BusinessDateWindow dateWindow,
                               Clock clock) {
         this.repository = repository;
         this.vehicleRepository = vehicleRepository;
         this.vehicleService = vehicleService;
         this.allocationService = allocationService;
         this.catalogService = catalogService;
+        this.dateWindow = dateWindow;
         this.clock = clock;
     }
 
@@ -247,7 +251,12 @@ public class MaintenanceService {
             .toList();
     }
 
-    private static void validateDates(MaintenanceRequest request) {
+    private void validateDates(MaintenanceRequest request) {
+        // Limite absoluto antes da regra relativa: sem ele, inicio e fim ambos
+        // em 9999 satisfazem "fim depois do inicio" e passam.
+        dateWindow.validate(request.dataInicioPrevista(), "O inicio previsto");
+        dateWindow.validate(request.dataFinalizacaoPrevista(), "A finalizacao prevista");
+
         if (request.dataFinalizacaoPrevista().isBefore(request.dataInicioPrevista())) {
             throw new BusinessRuleException("A finalizacao prevista nao pode ser anterior ao inicio previsto.");
         }

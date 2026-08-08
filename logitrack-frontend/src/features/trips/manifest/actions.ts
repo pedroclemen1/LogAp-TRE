@@ -25,8 +25,13 @@ function parseManifestForm(formData: FormData, t: Translate): ParsedForm {
   const carrierTaxId = text('transportadoraCnpj')
   const vehicleDescription = text('veiculoDescricao')
 
+  // Normaliza antes de validar: aceita CNPJ colado com pontuacao e envia a
+  // forma canonica de 14 digitos que o backend exige.
+  const carrierTaxIdDigits = carrierTaxId.replace(/\D/g, '')
+
   if (!carrierName) fieldErrors.transportadoraRazaoSocial = t('requiredCarrierName')
   if (!carrierTaxId) fieldErrors.transportadoraCnpj = t('requiredCarrierTaxId')
+  else if (carrierTaxIdDigits.length !== 14) fieldErrors.transportadoraCnpj = t('invalidCarrierTaxId')
   if (!vehicleDescription) fieldErrors.veiculoDescricao = t('requiredVehicleDescription')
 
   const itemCount = Number(formData.get('itensQuantidade'))
@@ -70,7 +75,7 @@ function parseManifestForm(formData: FormData, t: Translate): ParsedForm {
   return {
     input: {
       transportadoraRazaoSocial: carrierName,
-      transportadoraCnpj: carrierTaxId,
+      transportadoraCnpj: carrierTaxIdDigits,
       transportadoraAntt: optional(text('transportadoraAntt')),
       veiculoDescricao: vehicleDescription,
       origemEndereco: optional(text('origemEndereco')),

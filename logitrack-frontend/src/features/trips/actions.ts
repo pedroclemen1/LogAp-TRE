@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { ApiRequestError, UnauthorizedError } from '@/shared/api/api-error'
 import { redirectToExpiredSession } from '@/shared/api/require-session'
+import { isWithinDateWindow } from '@/shared/lib/date-window'
 import {
   cancelTrip,
   completeTripStage,
@@ -39,6 +40,7 @@ type ValidationMessages = {
   distance: string
   load: string
   routeOrder: string
+  dateOutOfRange: string
 }
 
 function parseTripForm(formData: FormData, messages: ValidationMessages): ParsedTripForm {
@@ -58,6 +60,7 @@ function parseTripForm(formData: FormData, messages: ValidationMessages): Parsed
     fieldErrors.motoristaId = messages.invalidDriver
   }
   if (!values.dataSaida) fieldErrors.dataSaida = messages.requiredDeparture
+  else if (!isWithinDateWindow(values.dataSaida)) fieldErrors.dataSaida = messages.dateOutOfRange
   if (!values.origem) fieldErrors.origem = messages.requiredOrigin
   if (!Number.isInteger(stageCount) || stageCount < 1 || stageCount > MAX_STAGES) {
     fieldErrors.trechos = messages.stagesCount
@@ -87,7 +90,11 @@ function parseTripForm(formData: FormData, messages: ValidationMessages): Parsed
       if (!Number.isFinite(load) || load < 0) {
         fieldErrors[`${prefix}.cargaKg`] = messages.load
       }
-      if (expectedAt && previousExpected && expectedAt < previousExpected) {
+      // Limite absoluto antes da ordem: uma previsao em 9999 e crescente e
+      // passaria pela checagem relativa sem esta linha.
+      if (expectedAt && !isWithinDateWindow(expectedAt)) {
+        fieldErrors[`${prefix}.previstoEm`] = messages.dateOutOfRange
+      } else if (expectedAt && previousExpected && expectedAt < previousExpected) {
         fieldErrors[`${prefix}.previstoEm`] = messages.routeOrder
       }
       if (expectedAt) previousExpected = expectedAt
@@ -141,6 +148,7 @@ async function parseLocalizedTripForm(formData: FormData) {
       distance: t('distance'),
       load: t('load'),
       routeOrder: t('routeOrder'),
+      dateOutOfRange: t('dateOutOfRange'),
     }),
     t,
   }

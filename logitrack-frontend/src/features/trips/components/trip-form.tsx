@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { Alert } from '@/shared/ui/alert'
 import { Button } from '@/shared/ui/button'
 import { buttonClassName } from '@/shared/ui/button-variants'
+import { dateTimeBounds } from '@/shared/lib/date-window'
 import { Field, FieldsetLegend } from '@/shared/ui/field'
 import { Icon } from '@/shared/ui/icon'
 import { Select } from '@/shared/ui/select'
@@ -13,6 +14,12 @@ import { useTripFormController } from '../controllers/use-trip-form-controller'
 import type { DriverOption, RouteStage, Trip, VehicleOption } from '../model/trip'
 import { TRIP_FORM_CONTROL } from './trip-form-styles'
 import { TripRouteEditor } from './trip-route-editor'
+
+/**
+ * Calculado uma vez por carregamento do modulo. A janela e de anos; recalcular
+ * a cada render nao mudaria o valor e faria o atributo oscilar sem motivo.
+ */
+const DATE_TIME_BOUNDS = dateTimeBounds()
 
 type TripFormProps = {
   vehicles: readonly VehicleOption[]
@@ -93,6 +100,7 @@ export function TripForm({ vehicles, drivers, trip, stages, onSuccess, onCancel 
           </Field>
           <Field htmlFor="dataSaida" label={t('scheduledDeparture')} error={controller.fieldError('dataSaida')}>
             <TextInput id="dataSaida" name="dataSaida" type="datetime-local" required
+              min={DATE_TIME_BOUNDS.min} max={DATE_TIME_BOUNDS.max}
               defaultValue={controller.submittedValue('dataSaida')}
               className={`${TRIP_FORM_CONTROL} font-data-mono`} />
           </Field>

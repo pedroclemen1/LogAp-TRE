@@ -757,6 +757,7 @@
       "distance": "Informe uma distância maior que zero.",
       "load": "Informe uma carga igual ou maior que zero.",
       "routeOrder": "A previsão deve respeitar a ordem da rota.",
+      "dateOutOfRange": "Informe uma data entre 5 anos atrás e 2 anos à frente.",
       "network": "Não foi possível conectar ao servidor.",
       "createdMissing": "A API não retornou a viagem criada.",
       "loadFailed": "Não foi possível carregar os trechos da viagem.",
@@ -984,6 +985,7 @@
       "requiredStart": "Informe a data planejada de início.",
       "requiredFinish": "Informe a data planejada de conclusão.",
       "invalidRange": "A conclusão planejada não pode ser anterior ao início.",
+      "dateOutOfRange": "Informe uma data entre 5 anos atrás e 2 anos à frente.",
       "servicesCount": "Adicione entre 1 e 30 serviços.",
       "selectService": "Selecione o serviço do item {number}.",
       "duplicateService": "O serviço do item {number} já foi adicionado.",
@@ -1239,6 +1241,7 @@
     "validation": {
       "requiredCarrierName": "Informe a razão social da transportadora.",
       "requiredCarrierTaxId": "Informe o CNPJ da transportadora.",
+      "invalidCarrierTaxId": "O CNPJ deve conter 14 dígitos.",
       "requiredVehicleDescription": "Informe a descrição do veículo.",
       "requiredInvoice": "Informe a nota fiscal.",
       "requiredRecipient": "Informe o destinatário final.",

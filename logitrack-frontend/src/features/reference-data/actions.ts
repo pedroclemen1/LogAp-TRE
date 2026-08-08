@@ -49,8 +49,20 @@ function normalizeDriver(input: DriverInput): DriverInput {
   }
 }
 
+/** A CNH brasileira tem exatamente 11 digitos; o backend exige o mesmo. */
+const DRIVER_LICENSE_LENGTH = 11
+
 export async function saveDriverAction(id: number | undefined, input: DriverInput): Promise<ReferenceMutationState> {
   const normalized = normalizeDriver(input)
+
+  // O componente ja valida antes de chamar, mas Server Action e um endpoint
+  // HTTP: pode ser invocada sem passar pelo formulario. Esta e a fronteira do
+  // servidor, e a checagem do cliente e conveniencia.
+  if (normalized.cnh.length !== DRIVER_LICENSE_LENGTH) {
+    const t = await getTranslations('Reference.drivers.form')
+    return { status: 'error', fieldErrors: { cnh: t('licenseInvalid') } }
+  }
+
   return mutate(() => id ? updateDriver(id, normalized) : createDriver(normalized), '/motoristas')
 }
 

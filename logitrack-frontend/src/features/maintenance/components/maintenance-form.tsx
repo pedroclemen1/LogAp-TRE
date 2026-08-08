@@ -11,6 +11,7 @@ import { IconButton } from '@/shared/ui/icon-button'
 import { Select } from '@/shared/ui/select'
 import { TextInput } from '@/shared/ui/text-input'
 import { useToast } from '@/shared/ui/use-toast'
+import { dateBounds } from '@/shared/lib/date-window'
 import { formatCurrency } from '@/shared/lib/format'
 import { createMaintenanceAction, updateMaintenanceAction } from '../actions'
 import { builtInMaintenanceServiceKey } from '../lib/maintenance-service-name'
@@ -21,6 +22,9 @@ const CONTROL =
   'block h-10 w-full rounded-xs border border-outline-variant bg-surface-container-lowest px-3 ' +
   'font-body-sm text-body-sm text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary ' +
   'disabled:cursor-not-allowed disabled:bg-surface-container-high disabled:text-on-surface-variant'
+
+/** Mesma janela do backend; ver `shared/lib/date-window`. */
+const DATE_BOUNDS = dateBounds()
 
 type ServiceDraft = {
   key: string
@@ -153,10 +157,12 @@ export function MaintenanceForm({ maintenance, vehicles, catalog, onSuccess, onC
         <Field htmlFor="dataInicioPrevista" label={t('plannedStart')} error={state.fieldErrors?.dataInicioPrevista}>
           {locked && <input type="hidden" name="dataInicioPrevista" value={maintenance.plannedStart} />}
           <TextInput id="dataInicioPrevista" name={locked ? undefined : 'dataInicioPrevista'} type="date" required disabled={locked}
+            min={DATE_BOUNDS.min} max={DATE_BOUNDS.max}
             defaultValue={maintenance?.plannedStart ?? ''} className={`${CONTROL} font-data-mono`} />
         </Field>
         <Field htmlFor="dataFinalizacaoPrevista" label={t('plannedFinish')} error={state.fieldErrors?.dataFinalizacaoPrevista}>
           <TextInput id="dataFinalizacaoPrevista" name="dataFinalizacaoPrevista" type="date" required
+            min={DATE_BOUNDS.min} max={DATE_BOUNDS.max}
             defaultValue={maintenance?.plannedFinish ?? ''} className={`${CONTROL} font-data-mono`} />
         </Field>
       </div>

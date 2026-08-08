@@ -59,7 +59,7 @@ export function DriverForm({ driver, onSuccess, onCancel }: {
           id="driver-license"
           required
           inputMode="numeric"
-          maxLength={14}
+          maxLength={11}
           autoComplete="off"
           placeholder="00000000000"
           value={license}

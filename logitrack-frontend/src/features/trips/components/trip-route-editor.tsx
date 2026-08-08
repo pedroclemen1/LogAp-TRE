@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
+import { dateTimeBounds } from '@/shared/lib/date-window'
 import { formatDecimal } from '@/shared/lib/format'
 import { Button } from '@/shared/ui/button'
 import { Field, FieldsetLegend } from '@/shared/ui/field'
@@ -10,6 +11,9 @@ import { IconButton } from '@/shared/ui/icon-button'
 import { TextInput } from '@/shared/ui/text-input'
 import type { RouteStage } from '../model/trip'
 import { TRIP_FORM_CONTROL } from './trip-form-styles'
+
+/** Mesma janela do backend; ver `shared/lib/date-window`. */
+const DATE_TIME_BOUNDS = dateTimeBounds()
 
 type StageDraft = {
   key: string
@@ -146,6 +150,7 @@ export function TripRouteEditor({
                 </Field>
                 <Field htmlFor={`trecho-${index}-previsao`} label={t('expectedArrival')} error={fieldError(`${prefix}.previstoEm`)}>
                   <TextInput id={`trecho-${index}-previsao`} name={`${prefix}.previstoEm`} type="datetime-local"
+                    min={DATE_TIME_BOUNDS.min} max={DATE_TIME_BOUNDS.max}
                     value={stage.expectedAt} onChange={(event) => updateStage(index, { expectedAt: event.target.value })}
                     className={`${TRIP_FORM_CONTROL} font-data-mono`} />
                 </Field>

@@ -757,6 +757,7 @@
       "distance": "Enter a distance greater than zero.",
       "load": "Enter a load equal to or greater than zero.",
       "routeOrder": "Expected times must follow the route order.",
+      "dateOutOfRange": "Enter a date between 5 years ago and 2 years ahead.",
       "network": "Could not connect to the server.",
       "createdMissing": "The API did not return the created trip.",
       "loadFailed": "Could not load the trip route segments.",
@@ -984,6 +985,7 @@
       "requiredStart": "Enter the planned start date.",
       "requiredFinish": "Enter the planned completion date.",
       "invalidRange": "Planned completion cannot be before the start date.",
+      "dateOutOfRange": "Enter a date between 5 years ago and 2 years ahead.",
       "servicesCount": "Add between 1 and 30 services.",
       "selectService": "Select the service for item {number}.",
       "duplicateService": "The service in item {number} has already been added.",
@@ -1239,6 +1241,7 @@
     "validation": {
       "requiredCarrierName": "Enter the carrier legal name.",
       "requiredCarrierTaxId": "Enter the carrier tax ID.",
+      "invalidCarrierTaxId": "The tax ID must contain 14 digits.",
       "requiredVehicleDescription": "Enter the vehicle description.",
       "requiredInvoice": "Enter the invoice.",
       "requiredRecipient": "Enter the final recipient.",

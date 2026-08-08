@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { getTranslations } from 'next-intl/server'
 import { ApiRequestError, UnauthorizedError } from '@/shared/api/api-error'
 import { redirectToExpiredSession } from '@/shared/api/require-session'
+import { isWithinDateWindow } from '@/shared/lib/date-window'
 import {
   createMaintenance,
   deleteMaintenance,
@@ -25,6 +26,7 @@ type ValidationMessages = {
   requiredStart: string
   requiredFinish: string
   invalidRange: string
+  dateOutOfRange: string
   servicesCount: string
   selectService: (number: number) => string
   duplicateService: (number: number) => string
@@ -40,8 +42,13 @@ function parseMaintenanceForm(formData: FormData, messages: ValidationMessages):
 
   if (!Number.isInteger(vehicleId) || vehicleId <= 0) fieldErrors.veiculoId = messages.selectVehicle
   if (!plannedStart) fieldErrors.dataInicioPrevista = messages.requiredStart
+  else if (!isWithinDateWindow(plannedStart)) fieldErrors.dataInicioPrevista = messages.dateOutOfRange
+
   if (!plannedFinish) fieldErrors.dataFinalizacaoPrevista = messages.requiredFinish
-  if (plannedStart && plannedFinish && plannedFinish < plannedStart) {
+  // Limite absoluto antes da regra relativa: inicio e fim ambos em 9999
+  // satisfazem "fim depois do inicio".
+  else if (!isWithinDateWindow(plannedFinish)) fieldErrors.dataFinalizacaoPrevista = messages.dateOutOfRange
+  else if (plannedStart && plannedFinish < plannedStart) {
     fieldErrors.dataFinalizacaoPrevista = messages.invalidRange
   }
   if (!Number.isInteger(count) || count < 1 || count > 30) {
@@ -110,6 +117,7 @@ async function save(
     requiredStart: t('requiredStart'),
     requiredFinish: t('requiredFinish'),
     invalidRange: t('invalidRange'),
+    dateOutOfRange: t('dateOutOfRange'),
     servicesCount: t('servicesCount'),
     selectService: (number) => t('selectService', { number }),
     duplicateService: (number) => t('duplicateService', { number }),

@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale, useTranslations } from 'next-intl'
-import { formatDecimal, formatInteger } from '@/shared/lib/format'
+import { formatDecimal, formatInteger, formatTaxId } from '@/shared/lib/format'
 import type { AppLocale } from '@/i18n/config'
 import type { Manifest } from '../model/manifest'
 import { ManifestDocument } from './manifest-document'
@@ -35,7 +35,9 @@ export function ManifestView({ manifest }: { manifest: Manifest }) {
       }}
       slots={{
         carrierName: orDash(manifest.carrierName),
-        carrierTaxId: <span className="font-data-mono text-data-mono">{manifest.carrierTaxId}</span>,
+        carrierTaxId: (
+          <span className="font-data-mono text-data-mono">{formatTaxId(manifest.carrierTaxId)}</span>
+        ),
         carrierRegistry: orDash(manifest.carrierRegistry),
         vehicleDescription: orDash(manifest.vehicleDescription),
         originAddress: <p className={MUTED}>{manifest.originAddress ?? '—'}</p>,

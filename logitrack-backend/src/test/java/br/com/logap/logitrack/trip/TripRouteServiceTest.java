@@ -6,12 +6,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import br.com.logap.logitrack.shared.BusinessDateWindow;
 import br.com.logap.logitrack.shared.BusinessRuleException;
 import br.com.logap.logitrack.trip.dto.TripStageRequest;
 
@@ -25,7 +28,13 @@ class TripRouteServiceTest {
     @BeforeEach
     void setUp() {
         repository = mock(TripStageRepository.class);
-        service = new TripRouteService(repository);
+        // Relogio fixo em DEPARTURE, e nao o do sistema: as datas deste teste
+        // sao absolutas, e com relogio real ele passaria a falhar sozinho ao
+        // sair da janela de anos aceita.
+        var zone = ZoneId.of("America/Sao_Paulo");
+        var dateWindow = new BusinessDateWindow(
+            Clock.fixed(DEPARTURE.atZone(zone).toInstant(), zone));
+        service = new TripRouteService(repository, dateWindow);
     }
 
     @Test

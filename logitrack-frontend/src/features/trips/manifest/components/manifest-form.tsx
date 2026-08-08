@@ -48,7 +48,13 @@ export function ManifestForm({
   const templateHeader = [t('invoice'), t('recipient'), t('volumes'), t('weight')]
   const templateRows = [['NF-001248', 'Indústrias Alfa Ltda', 12, 450.5]]
 
-  function textInput(name: string, placeholder: string, defaultValue?: string, required = false) {
+  function textInput(
+    name: string,
+    placeholder: string,
+    defaultValue?: string,
+    required = false,
+    extra?: Partial<React.ComponentProps<'input'>>,
+  ) {
     const error = controller.fieldError(name)
     return (
       <>
@@ -59,10 +65,30 @@ export function ManifestForm({
           defaultValue={defaultValue}
           aria-invalid={error ? true : undefined}
           className={INPUT}
+          {...extra}
         />
         {error && <span className={FIELD_ERROR}>{error}</span>}
       </>
     )
+  }
+
+  /**
+   * Campo de digitos apenas. `inputMode` sozinho nao resolve: ele e dica de
+   * teclado mobile, e no desktop letras entram normalmente. A limpeza no
+   * `onInput` cobre digitacao, colagem e arraste, e ainda aceita um CNPJ
+   * colado com pontuacao, descartando o que nao for digito.
+   */
+  function digitsInput(name: string, placeholder: string, maxLength: number,
+                       defaultValue?: string, required = false) {
+    return textInput(name, placeholder, defaultValue, required, {
+      inputMode: 'numeric',
+      maxLength,
+      onInput: (event) => {
+        const field = event.currentTarget
+        const digits = field.value.replace(/\D/g, '').slice(0, maxLength)
+        if (field.value !== digits) field.value = digits
+      },
+    })
   }
 
   return (
@@ -88,7 +114,7 @@ export function ManifestForm({
         }}
         slots={{
           carrierName: textInput('transportadoraRazaoSocial', t('carrierNamePlaceholder'), existing?.carrierName, true),
-          carrierTaxId: textInput('transportadoraCnpj', t('carrierTaxIdPlaceholder'), existing?.carrierTaxId, true),
+          carrierTaxId: digitsInput('transportadoraCnpj', t('carrierTaxIdPlaceholder'), 14, existing?.carrierTaxId, true),
           carrierRegistry: textInput('transportadoraAntt', t('registryPlaceholder'), existing?.carrierRegistry),
           vehicleDescription: textInput('veiculoDescricao', t('vehicleDescriptionPlaceholder'), existing?.vehicleDescription, true),
           originAddress: textInput('origemEndereco', t('originAddressPlaceholder'), existing?.originAddress),

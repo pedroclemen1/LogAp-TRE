@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -26,8 +27,11 @@ public record ManifestRequest(
     @Size(max = 150, message = "A razao social deve ter no maximo 150 caracteres.")
     String transportadoraRazaoSocial,
 
+    // Guardado como 14 digitos, sem pontuacao: forma canonica. Com pontuacao,
+    // o mesmo CNPJ existiria como duas strings distintas e qualquer busca ou
+    // comparacao futura falharia em silencio. A formatacao e da exibicao.
     @NotBlank(message = "Informe o CNPJ da transportadora.")
-    @Size(max = 18, message = "O CNPJ deve ter no maximo 18 caracteres.")
+    @Pattern(regexp = "^\\d{14}$", message = "O CNPJ deve conter exatamente 14 digitos, sem pontuacao.")
     String transportadoraCnpj,
 
     @Size(max = 20, message = "O registro ANTT deve ter no maximo 20 caracteres.")
