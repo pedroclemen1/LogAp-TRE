@@ -6,14 +6,37 @@ O navegador não chama a API Spring diretamente. O Next recebe a requisição, l
 `HttpOnly` e envia `Authorization: Bearer` ao backend. Isso evita `localStorage`, centraliza erros e
 permite que as páginas sejam renderizadas no servidor.
 
+A alternativa seria uma SPA convencional, com o React chamando a API e guardando o token no
+navegador. Ela foi descartada pelo modelo de ameaça: se o JavaScript precisa montar o header
+`Authorization`, o token tem de estar em algum lugar que o JavaScript leia — e aí qualquer XSS, seja
+por dependência comprometida ou por injeção de conteúdo, consegue **extrair a credencial** e usá-la
+depois, de outro lugar. Com o token em cookie `HttpOnly`, um XSS ainda age dentro da aba aberta, mas
+não leva a sessão embora.
+
+O BFF trouxe outros três ganhos que reforçam a escolha: permite provar à API que a chamada vem do
+frontend confiável, por segredo compartilhado que nunca chega ao navegador; permite que a API fique
+em rede privada, sem exposição pública; e elimina CORS da aplicação, já que o navegador conversa
+apenas com a mesma origem.
+
+O custo é real e assumido: um serviço a mais para publicar, um salto extra de rede, e o fato de as
+chamadas à API não aparecerem na aba Network do navegador, o que muda o lugar onde se depura. Há
+ainda uma consequência específica: como todo login parte do servidor Next, a API veria todas as
+tentativas vindo de um mesmo endereço — por isso o frontend envia um identificador anônimo de
+navegador, para que a limitação de tentativas continue isolando quem erra a senha.
+
 O proxy verifica a presença do cookie para decidir a navegação. Um segundo cookie `HttpOnly`, sem
 credencial, marca a troca obrigatória da senha inicial e limita a navegação a `/alterar-senha`.
 A assinatura, expiração, perfil e situação do usuário continuam sendo validados pelo Spring. Um
 `401` limpa a sessão antes de voltar ao login, evitando ciclos de redirecionamento.
 
-Em produção, o cookie usa `Secure`, `HttpOnly`, `SameSite=Lax` e o mesmo prazo do JWT. O logout atual
-remove o cookie, mas não revoga um token já copiado; revogação por `jti` ou sessão persistida é uma
-evolução do backend caso invalidação imediata se torne requisito.
+Em produção, o cookie usa `Secure`, `HttpOnly`, `SameSite=Lax` e o mesmo prazo do JWT.
+
+O logout remove o cookie, o que encerra a sessão do navegador, mas não revoga um token que já tenha
+sido copiado — consequência direta de o JWT ser stateless. Revogação imediata exigiria manter estado
+no servidor, por lista de `jti` ou sessão persistida, e isso troca a simplicidade do stateless por
+uma consulta a cada requisição. A troca só se justifica se invalidação instantânea virar requisito;
+hoje a mitigação é a expiração curta do token e o versionamento de credenciais, que invalida sessões
+anteriores na troca de senha.
 
 Ao trocar a senha, a API invalida a credencial anterior e devolve um novo `LoginResponse`. A Server
 Action substitui o JWT e sua expiração diretamente no cookie `HttpOnly` antes do redirecionamento e

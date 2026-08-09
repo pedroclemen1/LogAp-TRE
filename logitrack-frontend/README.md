@@ -121,47 +121,20 @@ que cada serviço tem ciclo, variáveis e escala próprios.
 | Dockerfile Path | `Dockerfile` |
 | Health Check Path | `/login` |
 
-```dotenv
-API_BASE_URL=<endereco interno da API>
-BFF_SHARED_SECRET=<o MESMO valor cadastrado no servico da API>
-API_REQUEST_TIMEOUT_MS=30000
-```
+O serviço recebe três variáveis: `API_BASE_URL`, `BFF_SHARED_SECRET` e `API_REQUEST_TIMEOUT_MS`. As
+duas primeiras são obrigatórias em produção e não têm fallback — sem elas o serviço falha na
+inicialização em vez de atender com configuração de desenvolvimento.
 
-`API_BASE_URL` precisa ser alcançável pelo container do Next; um endereço interno do provedor é
-preferível quando os dois serviços estão na mesma rede privada.
+O `BFF_SHARED_SECRET` é o mesmo cadastrado na API. Divergência entre os dois é a falha de
+configuração mais traiçoeira do sistema, porque o sintoma engana: o serviço sobe, a tela de login
+carrega normalmente, e toda autenticação é recusada sem erro evidente.
 
-`BFF_SHARED_SECRET` diferente entre os dois serviços é a falha mais fácil de cometer, porque o
-sintoma engana: o frontend sobe, a tela de login carrega, e toda autenticação é recusada.
+O timeout está em 30 segundos, e não no padrão de 15, por causa da hibernação por inatividade do
+plano gratuito: a API leva de 30 a 60 segundos para retornar do repouso, e com o valor padrão o BFF
+desistiria antes da resposta — a primeira visita do dia pareceria uma aplicação quebrada.
 
-Em plataformas cujo plano gratuito hiberna o serviço por inatividade, o retorno leva de 30 a 60
-segundos. O padrão de `API_REQUEST_TIMEOUT_MS` é 15000, então o BFF desistiria antes da API
-responder e a primeira visita do dia pareceria quebrada — por isso o valor sugerido acima.
-
-### Antes de publicar
-
-```bash
-npm ci
-npm run verify
-docker compose config
-docker compose build
-docker compose up -d --wait
-docker compose down
-```
-
-O Compose possui healthcheck da rota de login. Ele usa `127.0.0.1` explicitamente porque a imagem
-Alpine pode resolver `localhost` para IPv6 enquanto o Next escuta em IPv4.
-
-### Diagnóstico
-
-- `API_BASE_URL is required in production`: variável ausente no serviço do frontend.
-- `BFF_SHARED_SECRET is required in production`: idem, e o valor precisa bater com o da API.
-- Timeout ao abrir uma página: conferir conectividade do container com a API e
-  `API_REQUEST_TIMEOUT_MS`.
-- Redirecionamento contínuo ao login: verificar expiração do JWT, relógio dos serviços e segredo
-  do backend.
-- Interface sem estilos: confirmar que `postcss.config.mjs`, `@tailwindcss/postcss` e
-  `globals.css` estão presentes no build.
-- Tradução ausente: executar `npm test`; a suíte compara os dois catálogos e valida ICU.
+O healthcheck do Compose aponta para `127.0.0.1`, e não `localhost`, porque a imagem Alpine pode
+resolver o nome para IPv6 enquanto o Next escuta em IPv4.
 
 ### Artefatos gerados
 

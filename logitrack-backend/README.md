@@ -82,92 +82,65 @@ compartilhado, não a edite: novas mudanças recebem uma nova versão.
 
 ## Deploy
 
-A API é publicada como **Web Service Docker**, com o PostgreSQL como serviço gerenciado na mesma
-região. O `docker-compose.yml` existe apenas para desenvolvimento local; a plataforma constrói
-somente o `Dockerfile` deste diretório.
+A API está publicada como **Web Service Docker**, com PostgreSQL gerenciado na mesma região — o
+endereço interno do banco só resolve assim, e é ele que mantém o tráfego fora da internet pública. O
+`docker-compose.yml` serve apenas ao desenvolvimento local; a plataforma constrói somente o
+`Dockerfile` deste diretório, com `logitrack-backend` como raiz e `/actuator/health` como health
+check.
 
-| Campo | Valor |
-| --- | --- |
-| Runtime | Docker |
-| Root Directory | `logitrack-backend` |
-| Dockerfile Path | `Dockerfile` |
-| Health Check Path | `/actuator/health` |
+A mesma imagem sobe em qualquer ambiente: o container roda como usuário sem privilégios e escuta a
+porta indicada por `PORT`, caindo para `10000` quando ela não existe. Não há Dockerfile por ambiente.
 
-O container inicia como usuário sem privilégios e escuta a variável `PORT`, caindo para `10000`
-quando ela não existir. Não é necessário alterar o `Dockerfile` por ambiente.
+### Configuração como contrato
 
-### Variáveis obrigatórias
+O `application-prod.yml` não contém valor algum — apenas declara de que variáveis a aplicação
+precisa. Fora do perfil `dev` **não existe fallback**: se qualquer uma faltar, o startup falha.
 
-O Spring JDBC não aceita a URL no formato `postgresql://` que os painéis costumam exibir. Monte
-`DB_URL` no formato JDBC, sem usuário e senha, usando o **endereço interno** do banco:
+A escolha é deliberada. Um segredo com valor padrão silencioso é pior que a ausência dele, porque a
+aplicação sobe aparentando saúde enquanto usa credencial de desenvolvimento em produção. Falhar no
+boot torna o erro imediato e legível.
 
-```dotenv
-SPRING_PROFILES_ACTIVE=prod
+| Variável | Papel |
+|---|---|
+| `SPRING_PROFILES_ACTIVE` | ativa o perfil `prod`, que desliga Swagger, silencia SQL e exige HTTPS nos convites |
+| `DB_URL`, `DB_USER`, `DB_PASSWORD` | conexão com o banco |
+| `JWT_SECRET`, `JWT_EXPIRATION_MINUTES` | assinatura e duração da sessão |
+| `BFF_SHARED_SECRET` | prova de que a chamada vem do frontend confiável |
+| `CORS_ORIGINS` | origem permitida, sempre explícita |
+| `INVITATION_BASE_URL` | base do link de convite |
+| `FORWARD_HEADERS_STRATEGY` | faz `getRemoteAddr()` refletir o cliente atrás do proxy |
 
-DB_URL=jdbc:postgresql://<hostname-interno>:5432/<database>
-DB_USER=<usuario>
-DB_PASSWORD=<senha>
+Quatro decisões embutidas nessa lista:
 
-JWT_SECRET=<aleatorio, no minimo 32 bytes>
-JWT_EXPIRATION_MINUTES=60
-BFF_SHARED_SECRET=<aleatorio, no minimo 32 bytes>
+**`DB_URL` usa o formato JDBC** (`jdbc:postgresql://host:5432/base`), com usuário e senha em variáveis
+separadas. O formato `postgresql://user:pass@host/base` que os provedores exibem não é aceito pelo
+driver do Spring.
 
-CORS_ORIGINS=https://<frontend>/
-INVITATION_BASE_URL=https://<frontend>/convite
-INVITATION_EXPIRATION_HOURS=48
+**`BFF_SHARED_SECRET` é distinto do `JWT_SECRET`** e idêntico nos dois serviços. Separá-los permite
+rotacionar um sem encerrar as sessões abertas pelo outro, já que protegem coisas diferentes: um
+assina a sessão do usuário, o outro identifica o frontend perante a API.
 
-FORWARD_HEADERS_STRATEGY=framework
-```
+**`CORS_ORIGINS` nunca é `*`**, porque a API aceita credenciais no CORS e o coringa desabilitaria a
+própria restrição.
 
-O perfil `prod` **não possui fallback** para nenhuma dessas. Faltando qualquer uma, o startup
-falha em vez de subir com configuração local silenciosa.
+**As locations do Flyway não são configuráveis por ambiente.** O perfil `prod` fixa
+`classpath:db/migration`, então a massa de demonstração de `db/seed` não tem como alcançar produção
+nem por engano de configuração.
 
-`BFF_SHARED_SECRET` autentica o frontend como o BFF confiável e precisa do **mesmo valor nos dois
-serviços**. Gere-o distinto do `JWT_SECRET`: os dois protegem coisas diferentes e devem poder ser
-rotacionados de forma independente. Rotacioná-lo exige atualizar os dois serviços na mesma janela.
+### Primeira conta
 
-`CORS_ORIGINS` aceita várias origens separadas por vírgula, sempre completas e sem caminho. Não
-use `*`, porque a API aceita credenciais no CORS.
+Produção não carrega o seed e não oferece cadastro público, então o banco nasce sem usuários. Em vez
+de gravar um administrador em migration — o que colocaria uma credencial no histórico versionado — a
+conta inicial vem de um provisionamento por variável de ambiente, ativado apenas no primeiro deploy.
 
-Não configure `FLYWAY_LOCATIONS` nem `SPRING_FLYWAY_LOCATIONS`. O perfil `prod` fixa
-`classpath:db/migration`; os dados de `db/seed` pertencem exclusivamente ao perfil `dev`.
+O comportamento em `prod` é intencionalmente rígido: banco vazio **sem** esse provisionamento impede
+o startup. A aplicação não fica publicada sem ninguém capaz de administrá-la.
 
-### Primeiro gestor
+A conta criada nasce com troca de senha obrigatória, e a troca invalida o token do primeiro acesso.
+Isso é o que permite descartar as variáveis de bootstrap logo após o primeiro login: a senha que
+passou pelo painel deixa de valer. Os usuários seguintes entram por convite.
 
-Produção não carrega o seed e não oferece cadastro público, então o banco nasce sem contas. No
-primeiro deploy, habilite temporariamente o provisionamento:
-
-```dotenv
-BOOTSTRAP_ADMIN_ENABLED=true
-BOOTSTRAP_ADMIN_NAME=<nome>
-BOOTSTRAP_ADMIN_EMAIL=<email>
-BOOTSTRAP_ADMIN_PASSWORD=<senha com no minimo 12 caracteres>
-```
-
-No perfil `prod`, um banco vazio sem bootstrap habilitado impede o startup: a aplicação não fica
-publicada sem uma conta administrativa. O bootstrap é idempotente e não redefine credenciais em
-reinicializações posteriores.
-
-Depois de validar o primeiro login, conclua a troca obrigatória de senha, defina
-`BOOTSTRAP_ADMIN_ENABLED=false`, **remova** as três variáveis restantes e faça um novo deploy. A
-troca de senha invalida o JWT do primeiro login, então frontend e backend desta versão precisam
-estar publicados em conjunto.
-
-Não coloque o gestor real em uma migration e não habilite o seed em produção.
-
-### Verificação do deploy
-
-```bash
-curl --fail https://<api>/actuator/health   # {"status":"UP"}
-```
-
-Confirme nos logs do primeiro deploy: migrations do Flyway concluídas sem erro, Hibernate validou
-o schema, nenhuma migration de `db/seed` executada, nenhum SQL ou segredo impresso, e o gestor
-inicial criado uma única vez.
-
-Se o startup falhar por variável ausente, corrija no painel — não adicione valores padrão ao
-perfil `prod`. Se o health check falhar, confira `SPRING_PROFILES_ACTIVE`, `PORT`, `DB_URL` e se
-banco e API estão na mesma região.
+O provisionamento é idempotente — reinicializações não redefinem credenciais.
 
 ## Documentação
 

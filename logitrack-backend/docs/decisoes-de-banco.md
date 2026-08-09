@@ -71,7 +71,7 @@ significado no dashboard com o passar do tempo.
 
 ---
 
-## 2. Nada de coluna de status — status é consulta
+## 2. Status é consulta, não coluna
 
 Não existe `viagens.status` nem `veiculos.status`. Ambos são derivados:
 
@@ -97,10 +97,12 @@ decisão humana (`EM_REALIZACAO` não é dedutível das datas).
 
 ---
 
-## 3. UUID nos veículos — avaliado e recusado
+## 3. Identificador dos veículos: `SERIAL`, e não UUID
 
-A pergunta era se cada veículo deveria ganhar um identificador único do tipo
-UUID. Não deveria. Três leituras da ideia, e por que nenhuma se paga aqui:
+Avaliei adotar UUID como identificador de veículo e mantive a chave numérica. O UUID resolve
+problemas concretos, e vale registrar quais são, porque nenhum deles existe neste sistema.
+
+A ideia se desdobra em três formas, cada uma com um custo diferente:
 
 **(a) Trocar a PK `SERIAL` por `UUID`.** Reescreveria as FKs de `viagens` e
 `manutencoes` — ou seja, reescreveria o script de carga fornecido, que é
@@ -117,23 +119,21 @@ benefício nenhum.
 Nenhum se aplica. A API inteira está atrás de JWT, o banco é único, e a
 inserção é sempre server-side.
 
-**(c) O argumento que sobra é o de identificador estável e legível — e esse
-veículo já tem: a `placa`.** É `UNIQUE NOT NULL` desde o script original, é o
-que o operador de frota fala em voz alta, e é o que aparece na tela. Adicionar
-um UUID seria criar um segundo identificador natural para competir com o que já
-existe.
+**(c) Usá-lo como identificador estável e legível.** É o único argumento que sobreviveria aos dois
+anteriores, e o veículo já atende a ele pela `placa`: `UNIQUE NOT NULL` desde o script original, é o
+que o operador de frota fala em voz alta e o que aparece na tela. Um UUID aqui seria um segundo
+identificador natural competindo com o que já existe.
 
-O custo também não é zero: mais 16 bytes por linha, um segundo índice único a
+O custo tampouco é nulo: mais 16 bytes por linha, um segundo índice único a
 manter em toda escrita, um salto de índice extra em toda busca pelo id público,
 e — em UUID v4 — inserção em posição aleatória da B-tree, que fragmenta o índice
-em vez de crescer pela borda. E aplicar só em `veiculos` deixaria a API
+em vez de crescer pela borda. Aplicá-lo apenas em `veiculos` também deixaria a API
 incoerente: `/api/viagens/5` numérico ao lado de `/api/veiculos/<uuid>`.
 
-**Onde um UUID de fato ganharia lugar neste projeto:** como chave de
-idempotência na *criação de viagem*, gerada pelo formulário e gravada com
-`UNIQUE`, para que duplo clique no submit não vire duas viagens. É um campo em
-`viagens` a serviço de um problema real, não um id decorativo em `veiculos`.
-Fica anotado como melhoria; não está implementado.
+**O lugar onde um UUID se pagaria aqui é outro:** como chave de idempotência na *criação de viagem*,
+gerada pelo formulário e gravada com `UNIQUE`, para que um duplo clique no submit não produza duas
+viagens. Seria um campo em `viagens` a serviço de um problema real, e não um identificador decorativo
+em `veiculos`. Está mapeado como próximo passo, fora do escopo atual.
 
 ---
 
